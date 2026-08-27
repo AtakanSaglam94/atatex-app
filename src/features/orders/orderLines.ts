@@ -1,4 +1,4 @@
-import { calculerConfection, validerLargeur } from '@/lib/confection';
+import { calculerConfection, largeurLimits, validerLargeur } from '@/lib/confection';
 import { round2 } from '@/lib/money';
 import { UNIT_LABEL } from '@/lib/format';
 import type {
@@ -182,7 +182,8 @@ export function computeLine(
 
   const categoryLargeurMax =
     categories.find((c) => c.id === product.category_id)?.largeur_max ?? null;
-  const largeurError = validerLargeur(d.largeur ?? 0, type, categoryLargeurMax);
+  const limits = largeurLimits(type, categoryLargeurMax, product);
+  const largeurError = validerLargeur(d.largeur ?? 0, limits);
   if (largeurError) return { ...base, largeur: d.largeur, error: largeurError };
 
   const r = calculerConfection({

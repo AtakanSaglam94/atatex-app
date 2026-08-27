@@ -18,11 +18,14 @@ on conflict (id) do nothing;
 insert into product_categories (name, position, largeur_max) values
   ('Voilage',    10, null),
   ('Rideau',     20, null),
-  ('Tenture',    30, 2.50),
+  ('Tenture',    30, null),
   ('Store',      40, null),
   ('Ruflette',   45, null),
   ('Accessoire', 50, null)
 on conflict (name) do nothing;
+-- Limites de largeur : priorité produit > catégorie > type de confection.
+-- Ex. store : type "Store" = min 0,50 / max 3,00 ; une toile de store destinée
+-- aux tentures reçoit largeur_max = 2,50 sur SA fiche produit (voir plus bas).
 
 -- ---------------------------------------------------------------------------
 --  Types de confection (modifiables par l'admin)
@@ -76,16 +79,16 @@ on conflict (template_key) do nothing;
 -- ---------------------------------------------------------------------------
 --  Produits — tissus au mètre (avec confection sur mesure)
 -- ---------------------------------------------------------------------------
-insert into products (name, sku, category_id, price, unit, stock, low_stock_at, confection_category)
+insert into products (name, sku, category_id, price, unit, stock, low_stock_at, confection_category, largeur_max)
 select v.name, v.sku,
        (select id from product_categories where name = v.cat),
-       v.price, v.unit::product_unit, v.stock, v.low, v.cc::confection_categ
+       v.price, v.unit::product_unit, v.stock, v.low, v.cc::confection_categ, v.lmax
 from (values
-  ('Voilage lin naturel',            'VOI-LIN-NAT', 'Voilage',  16.50, 'm', 42, 15, 'rideau_voilage'),
-  ('Rideau occultant gris ardoise',  'RID-OCC-GRI', 'Rideau',   34.00, 'm', 18, 10, 'rideau_voilage'),
-  ('Tenture velours bleu nuit',      'TEN-VEL-BLE', 'Tenture',  42.50, 'm',  9, 10, 'tenture'),
-  ('Toile pour store beige sable',   'STO-TOI-BEI', 'Store',    28.00, 'm', 25, 10, 'store')
-) as v(name, sku, cat, price, unit, stock, low, cc);
+  ('Voilage lin naturel',            'VOI-LIN-NAT', 'Voilage',  16.50, 'm', 42, 15, 'rideau_voilage', null),
+  ('Rideau occultant gris ardoise',  'RID-OCC-GRI', 'Rideau',   34.00, 'm', 18, 10, 'rideau_voilage', null),
+  ('Tenture velours bleu nuit',      'TEN-VEL-BLE', 'Tenture',  42.50, 'm',  9, 10, 'tenture',        null),
+  ('Toile pour store beige sable',   'STO-TOI-BEI', 'Store',    28.00, 'm', 25, 10, 'store',          3.00)
+) as v(name, sku, cat, price, unit, stock, low, cc, lmax);
 
 -- ---------------------------------------------------------------------------
 --  Produits — accessoires & ruflettes (prix simples, pas de confection)

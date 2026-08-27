@@ -5,6 +5,7 @@ import { useData } from '@/data/DataProvider';
 import { useToast } from '@/lib/toast';
 import { eur, num } from '@/lib/money';
 import { computeOrderTotals } from '@/lib/order-totals';
+import { largeurLimits } from '@/lib/confection';
 import { STATUS_LABEL, STATUS_ORDER, terminalStatusLabel, todayISO, UNIT_LABEL } from '@/lib/format';
 import type { OrderWithRelations } from '@/types';
 import {
@@ -359,8 +360,7 @@ function ProductLineRow({
   const canConfection = product?.unit === 'm' && !!product?.confection_category;
   const selectedType = confectionTypes.find((t) => t.id === draft.confection_type_id) ?? null;
   const catMax = categories.find((c) => c.id === product?.category_id)?.largeur_max ?? null;
-  const effMin = selectedType?.largeur_min ?? null;
-  const effMax = catMax ?? selectedType?.largeur_max ?? null;
+  const { min: effMin, max: effMax } = largeurLimits(selectedType, catMax, product);
   const limitsHint =
     effMin != null || effMax != null
       ? `Largeur autorisée : ${effMin != null ? `min ${effMin} m` : ''}${

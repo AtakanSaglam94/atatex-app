@@ -73,6 +73,8 @@ export interface Product {
   stock: number;
   low_stock_at: number;
   max_qty_per_line: number | null;
+  largeur_min: number | null;
+  largeur_max: number | null;
   confection_category: ConfectionCategory | null;
   photo_url: string;
   active: boolean;

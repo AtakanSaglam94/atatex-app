@@ -71,23 +71,35 @@ export function fraisPourCategorie(
   }
 }
 
+export interface LargeurLimits {
+  min: number | null;
+  max: number | null;
+}
+
 /**
- * Vérifie que la largeur saisie respecte les limites autorisées.
- * La largeur maxi de la catégorie de produit (si définie) SURCHARGE celle du type.
- * Renvoie un message d'erreur, ou null si tout est bon.
+ * Limites de largeur effectives, par ordre de priorité décroissante :
+ *   - produit (surcharge fine, ex. toile store voilage vs tenture)
+ *   - catégorie de produit
+ *   - type de confection
  */
-export function validerLargeur(
-  largeur: number,
-  type: Pick<ConfectionRule, 'largeur_min' | 'largeur_max'>,
+export function largeurLimits(
+  type: Pick<ConfectionRule, 'largeur_min' | 'largeur_max'> | null,
   categoryLargeurMax: number | null | undefined,
-): string | null {
-  const min = type.largeur_min ?? null;
-  const max = categoryLargeurMax ?? type.largeur_max ?? null;
+  productLimits?: { largeur_min: number | null; largeur_max: number | null } | null,
+): LargeurLimits {
+  return {
+    min: productLimits?.largeur_min ?? type?.largeur_min ?? null,
+    max: productLimits?.largeur_max ?? categoryLargeurMax ?? type?.largeur_max ?? null,
+  };
+}
+
+/** Vérifie la largeur contre les limites. Renvoie un message d'erreur, ou null. */
+export function validerLargeur(largeur: number, limits: LargeurLimits): string | null {
   if (!largeur || largeur <= 0) return 'Saisissez la largeur souhaitée (m).';
-  if (min != null && largeur < min)
-    return `Largeur minimale pour ce type : ${min} m.`;
-  if (max != null && largeur > max)
-    return `Largeur maximale pour ce produit : ${max} m (ajoutez une autre solution ou revoyez la mesure).`;
+  if (limits.min != null && largeur < limits.min)
+    return `Largeur minimale : ${limits.min} m.`;
+  if (limits.max != null && largeur > limits.max)
+    return `Largeur maximale pour ce produit : ${limits.max} m.`;
   return null;
 }
 

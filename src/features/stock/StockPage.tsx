@@ -133,6 +133,8 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
     stock: product?.stock ?? 0,
     low_stock_at: product?.low_stock_at ?? 5,
     max_qty_per_line: product?.max_qty_per_line ?? ('' as number | ''),
+    largeur_min: product?.largeur_min ?? ('' as number | ''),
+    largeur_max: product?.largeur_max ?? ('' as number | ''),
     confection_category:
       product?.confection_category ?? ('' as '' | 'rideau_voilage' | 'tenture' | 'store'),
     photo_url: product?.photo_url ?? '',
@@ -152,6 +154,8 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
       stock: Number(f.stock) || 0,
       low_stock_at: Number(f.low_stock_at) || 0,
       max_qty_per_line: f.max_qty_per_line === '' ? null : Number(f.max_qty_per_line) || null,
+      largeur_min: f.largeur_min === '' ? null : Number(f.largeur_min) || null,
+      largeur_max: f.largeur_max === '' ? null : Number(f.largeur_max) || null,
       confection_category: f.unit === 'm' && f.confection_category ? f.confection_category : null,
       photo_url: f.photo_url.trim(),
       active: f.active,
@@ -252,6 +256,37 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
           </select>
           <div className="hint">
             Détermine quels frais de confection s'appliquent (rideau/voilage, tenture ou store).
+          </div>
+        </div>
+      )}
+      {f.unit === 'm' && f.confection_category && (
+        <div className="field-row">
+          <div className="field">
+            <label>Largeur min pour ce produit (m)</label>
+            <input
+              type="number"
+              step="0.01"
+              min={0}
+              placeholder="Selon le type"
+              value={f.largeur_min}
+              onChange={(e) =>
+                setF({ ...f, largeur_min: e.target.value === '' ? '' : parseFloat(e.target.value) || 0 })
+              }
+            />
+          </div>
+          <div className="field">
+            <label>Largeur max pour ce produit (m)</label>
+            <input
+              type="number"
+              step="0.01"
+              min={0}
+              placeholder="Selon le type / la catégorie"
+              value={f.largeur_max}
+              onChange={(e) =>
+                setF({ ...f, largeur_max: e.target.value === '' ? '' : parseFloat(e.target.value) || 0 })
+              }
+            />
+            <div className="hint">Surcharge le type et la catégorie (ex. toile de store pour tenture = 2,50 m).</div>
           </div>
         </div>
       )}

@@ -169,6 +169,10 @@ create table products (
   -- quantité maximale sur une seule ligne de commande (ex. rail = 6 m).
   -- NULL = pas de limite. Au-delà, l'utilisateur ajoute une 2e ligne.
   max_qty_per_line    numeric(10, 3),
+  -- surcharge fine des limites de largeur pour la confection de CE produit
+  -- (ex. toile de store « voilage » 3 m vs « tenture » 2,50 m). NULL = pas de surcharge.
+  largeur_min         numeric(8, 3),
+  largeur_max         numeric(8, 3),
   -- catégorie de confection : détermine quelle colonne de frais s'applique
   -- (rideau_voilage → frais_rideau_voilage, tenture → frais_tenture, store → frais_store).
   -- NULL pour les articles non confectionnables (accessoires, ruflettes…).

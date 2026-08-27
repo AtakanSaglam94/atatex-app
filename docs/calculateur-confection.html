@@ -469,8 +469,9 @@
 <script>
   "use strict";
 
-  // catégorie du produit -> largeur max qui SURCHARGE celle du type (null = pas de surcharge)
-  var CATEGORY_LARGEUR_MAX = { rideau_voilage: null, tenture: 2.5, store: null };
+  // largeur max qui SURCHARGE celle du type (définie par catégorie de produit
+  // ou directement sur la fiche produit). Ici : cas store voilage (3 m) vs tenture (2,50 m).
+  var CATEGORY_LARGEUR_MAX = { rideau_voilage: null, tenture: null, store: null };
 
   var CONFECTION_TYPES = [
     { nom: "Froncé",   facteur: 2,   marge_fixe: 0.2, frais_rideau_voilage: 4,  frais_tenture: 5,  frais_store: 0,   largeur_min: null, largeur_max: null },
