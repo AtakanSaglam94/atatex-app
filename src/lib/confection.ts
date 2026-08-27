@@ -13,20 +13,15 @@
  * de la table `confection_types`, modifiables par l'administrateur.
  */
 
-export type ConfectionCategory = 'rideau_voilage' | 'tenture';
+import type { ConfectionCategory, ConfectionType } from '@/types';
 
-export interface ConfectionType {
-  id: string;
-  nom: string;
-  /** multiplicateur appliqué à la largeur (ex. Froncé = 2) */
-  facteur: number;
-  /** marge fixe ajoutée au métrage, en mètres (ex. 0.20) */
-  marge_fixe: number;
-  /** frais de confection en €/m pour un produit de catégorie "rideau/voilage" */
-  frais_rideau_voilage: number;
-  /** frais de confection en €/m pour un produit de catégorie "tenture" */
-  frais_tenture: number;
-}
+export type { ConfectionCategory, ConfectionType };
+
+/** Champs strictement nécessaires au calcul (sous-ensemble de ConfectionType). */
+export type ConfectionRule = Pick<
+  ConfectionType,
+  'nom' | 'facteur' | 'marge_fixe' | 'frais_rideau_voilage' | 'frais_tenture'
+>;
 
 export interface ConfectionInput {
   /** largeur souhaitée en mètres — seule saisie de l'utilisateur */
@@ -36,7 +31,7 @@ export interface ConfectionInput {
   /** catégorie de confection du produit — choisit la colonne de frais */
   categorie: ConfectionCategory;
   /** type de confection choisi (enregistrement de `confection_types`) */
-  type: ConfectionType;
+  type: ConfectionRule;
 }
 
 export interface ConfectionResult {
@@ -56,7 +51,7 @@ export const round2 = (n: number): number => Math.round((Number(n) || 0) * 100) 
 
 /** Frais de confection (€/m) applicable selon la catégorie du produit. */
 export function fraisPourCategorie(
-  type: Pick<ConfectionType, 'frais_rideau_voilage' | 'frais_tenture'>,
+  type: Pick<ConfectionRule, 'frais_rideau_voilage' | 'frais_tenture'>,
   categorie: ConfectionCategory,
 ): number {
   return categorie === 'tenture' ? type.frais_tenture : type.frais_rideau_voilage;
@@ -84,7 +79,7 @@ export function calculerConfection(input: ConfectionInput): ConfectionResult {
  * Données de départ pré-remplies dans `confection_types`.
  * À valider avec les exemples de test avant mise en production.
  */
-export const CONFECTION_TYPES_SEED: Omit<ConfectionType, 'id'>[] = [
+export const CONFECTION_TYPES_SEED: ConfectionRule[] = [
   { nom: 'Froncé',   facteur: 2,   marge_fixe: 0.2, frais_rideau_voilage: 4,   frais_tenture: 5 },
   { nom: 'Plié',     facteur: 3,   marge_fixe: 0.2, frais_rideau_voilage: 4,   frais_tenture: 5 },
   { nom: 'Wave 6cm', facteur: 2.8, marge_fixe: 0.2, frais_rideau_voilage: 10,  frais_tenture: 10 },
