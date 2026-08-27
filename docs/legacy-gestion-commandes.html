@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Comptoir — Gestion des commandes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#16232C;
+    --ink-soft:#26363F;
+    --paper:#EFF2EE;
+    --panel:#FFFFFF;
+    --accent:#0F6F5C;
+    --accent-light:#DCEEE8;
+    --warm:#D9772E;
+    --warm-light:#FBEBDA;
+    --danger:#B5402A;
+    --danger-light:#F7E3DD;
+    --line:#DDE1D9;
+    --text:#1B2622;
+    --text-soft:#5C6862;
+    --text-faint:#8A948D;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--text);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;margin:0;letter-spacing:-0.01em;}
+  .mono{font-family:'IBM Plex Mono',monospace;}
+  button{font-family:inherit;cursor:pointer;}
+  input,select,textarea{font-family:inherit;}
+  #app{display:flex;min-height:100vh;}
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{
+    width:220px;flex-shrink:0;background:var(--ink);color:#EDEFEA;
+    display:flex;flex-direction:column;padding:22px 14px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;padding:0 10px 22px;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:18px;}
+  .brand-mark{width:30px;height:30px;border-radius:7px;background:var(--warm);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:600;font-size:16px;color:#231205;flex-shrink:0;}
+  .brand-name{font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:#fff;}
+  .brand-sub{font-size:10.5px;color:#93a099;letter-spacing:0.06em;text-transform:uppercase;}
+  nav{display:flex;flex-direction:column;gap:2px;flex:1;}
+  .navbtn{
+    display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:8px;
+    background:none;border:none;color:#C7CFC7;text-align:left;font-size:13.5px;font-weight:500;
+    transition:background .12s;
+  }
+  .navbtn svg{width:17px;height:17px;flex-shrink:0;opacity:.85;}
+  .navbtn:hover{background:rgba(255,255,255,0.06);color:#fff;}
+  .navbtn.active{background:var(--warm);color:#291404;}
+  .navbtn.active svg{opacity:1;}
+  .navbtn .count{margin-left:auto;font-size:11px;background:rgba(255,255,255,0.12);padding:1px 7px;border-radius:20px;}
+  .navbtn.active .count{background:rgba(0,0,0,0.18);}
+  .team-note{font-size:10.5px;color:#7E8B82;padding:10px 12px 0;border-top:1px solid rgba(255,255,255,0.1);margin-top:10px;line-height:1.5;}
+
+  /* ---------- Main ---------- */
+  main{flex:1;padding:28px 34px 60px;max-width:1180px;min-width:0;}
+  .pagehead{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:22px;gap:16px;flex-wrap:wrap;}
+  .pagehead h1{font-size:26px;}
+  .pagehead .sub{color:var(--text-soft);font-size:13.5px;margin-top:4px;}
+  .btn{
+    display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:8px;border:1px solid var(--line);
+    background:var(--panel);color:var(--text);font-size:13.5px;font-weight:500;white-space:nowrap;
+  }
+  .btn:hover{border-color:#c3cabd;}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .btn.primary:hover{background:#0c5b4b;}
+  .btn.warm{background:var(--warm);color:#fff;border-color:var(--warm);}
+  .btn.ghost{border-color:transparent;background:none;padding:6px 10px;}
+  .btn.danger-ghost{border-color:transparent;background:none;color:var(--danger);padding:6px 10px;}
+  .btn svg{width:15px;height:15px;}
+  .btn.small{padding:6px 11px;font-size:12.5px;}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+
+  /* ---------- Cards / grid ---------- */
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:26px;}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden;}
+  .stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent);}
+  .stat.warm::before{background:var(--warm);}
+  .stat.danger::before{background:var(--danger);}
+  .stat-label{font-size:11.5px;color:var(--text-soft);text-transform:uppercase;letter-spacing:0.05em;}
+  .stat-value{font-family:'Fraunces',serif;font-size:27px;font-weight:600;margin-top:5px;}
+  .stat-hint{font-size:11.5px;color:var(--text-faint);margin-top:3px;}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:20px;}
+  .panel-head{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;}
+  .panel-head h3{font-size:15px;}
+  .panel-body{padding:18px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--text-soft);padding:10px 18px;border-bottom:1px solid var(--line);font-weight:500;}
+  td{padding:11px 18px;border-bottom:1px solid #EDEFE9;vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:#FAFBF8;}
+  .empty-row td{text-align:center;color:var(--text-faint);padding:34px 18px;}
+
+  .badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:500;white-space:nowrap;}
+  .badge.pending{background:var(--warm-light);color:#8A4B10;}
+  .badge.prep{background:#E4EAF6;color:#2C4E8C;}
+  .badge.shipped{background:#E7E9F7;color:#42419A;}
+  .badge.done{background:var(--accent-light);color:#0B5645;}
+  .badge.cancel{background:var(--danger-light);color:#8A2E1B;}
+  .badge.paid{background:var(--accent-light);color:#0B5645;}
+  .badge.unpaid{background:var(--danger-light);color:#8A2E1B;}
+  .badge.low{background:var(--danger-light);color:#8A2E1B;}
+  .badge.ok{background:#EEF0EA;color:var(--text-soft);}
+  .badge.measure{background:#EEEDFE;color:#3C3489;}
+
+  .search{
+    display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;
+    padding:8px 12px;background:#FAFBF8;min-width:200px;
+  }
+  .search input{border:none;background:none;outline:none;font-size:13px;width:100%;color:var(--text);}
+  .search svg{width:15px;height:15px;color:var(--text-faint);flex-shrink:0;}
+
+  /* ---------- Modal ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(20,28,25,0.45);display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;z-index:100;overflow-y:auto;}
+  .modal{background:var(--panel);border-radius:14px;width:100%;max-width:560px;padding:26px 26px 24px;margin-top:10px;}
+  .modal.wide{max-width:760px;}
+  .modal h2{font-size:19px;margin-bottom:18px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;font-weight:500;color:var(--text-soft);margin-bottom:5px;}
+  .field input,.field select,.field textarea{
+    width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:7px;font-size:13.5px;background:#FCFDFB;color:var(--text);
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent);}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .field-row.three{grid-template-columns:1fr 1fr 1fr;}
+  .modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;flex-wrap:wrap;}
+  .err{color:var(--danger);font-size:12px;margin-top:5px;display:none;}
+  .err.show{display:block;}
+  .hint{font-size:11.5px;color:var(--text-faint);margin-top:4px;}
+
+  /* order builder */
+  .item-card{border:1px solid var(--line);border-radius:9px;padding:12px 13px;margin-bottom:10px;background:#FAFBF8;}
+  .item-top{display:grid;grid-template-columns:1fr 68px 88px 30px;gap:8px;align-items:center;}
+  .item-top select,.item-top input{padding:8px 9px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:#fff;}
+  .iconbtn{width:28px;height:28px;border-radius:6px;border:1px solid var(--line);background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .iconbtn svg{width:14px;height:14px;}
+  .order-total{display:flex;flex-direction:column;gap:4px;padding-top:14px;margin-top:8px;border-top:1px dashed var(--line);}
+  .order-total-row{display:flex;justify-content:space-between;font-size:13px;color:var(--text-soft);}
+  .order-total-row.grand{font-family:'Fraunces',serif;font-size:19px;font-weight:600;color:var(--text);padding-top:4px;}
+
+  .measure-toggle{display:flex;align-items:center;gap:7px;margin-top:10px;font-size:12.5px;color:var(--text-soft);}
+  .measure-panel{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:9px;padding:10px;background:#fff;border:1px solid var(--line);border-radius:7px;}
+  .measure-panel .field{margin-bottom:0;}
+  .measure-panel label{font-size:11px;}
+  .measure-panel input{padding:7px 8px;font-size:12.5px;}
+  .measure-result{grid-column:1/-1;font-size:12px;color:var(--accent);padding-top:2px;}
+
+  .option-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;}
+  .option-chip{display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:20px;padding:4px 11px 4px 8px;font-size:12px;}
+  .option-chip input{margin:0;}
+  .option-chip.on{border-color:var(--accent);background:var(--accent-light);color:#0B5645;}
+
+  .supp-row{display:grid;grid-template-columns:1fr 68px 100px 30px;gap:8px;align-items:center;}
+  .supp-row input{padding:8px 9px;border:1px solid var(--line);border-radius:6px;font-size:13px;background:#fff;}
+
+  /* ---------- Ticket (order detail / invoice) ---------- */
+  .ticket{background:var(--panel);border:1px solid var(--line);border-radius:12px;max-width:440px;overflow:hidden;}
+  .ticket-top{padding:20px 22px 16px;}
+  .ticket-top .tno{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text-faint);}
+  .ticket-top h2{font-size:20px;margin-top:4px;}
+  .perf{height:0;border-top:2px dashed var(--line);position:relative;margin:0 0;}
+  .perf::before,.perf::after{content:"";position:absolute;top:-9px;width:18px;height:18px;border-radius:50%;background:var(--paper);}
+  .perf::before{left:-9px;}
+  .perf::after{right:-9px;}
+  .ticket-body{padding:16px 22px;}
+  .ticket-row{display:flex;justify-content:space-between;font-size:13.5px;padding:6px 0;}
+  .ticket-row.muted{color:var(--text-soft);font-size:12px;padding:2px 0 2px 14px;}
+  .ticket-row.sub{color:var(--text-soft);font-size:13px;padding:4px 0;}
+  .ticket-total{display:flex;justify-content:space-between;font-family:'Fraunces',serif;font-size:20px;font-weight:600;padding-top:10px;margin-top:4px;border-top:1px solid var(--line);}
+  .ticket-foot{padding:14px 22px 20px;border-top:1px solid var(--line);}
+
+  /* ---------- Catalog ---------- */
+  .cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;}
+  .cat-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;position:relative;}
+  .cat-swatch{width:100%;height:80px;border-radius:8px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+  .cat-swatch svg{width:30px;height:30px;color:var(--accent);opacity:.75;}
+  .cat-card h4{font-size:14.5px;font-weight:600;font-family:'Inter',sans-serif;}
+  .cat-cat{font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:0.04em;margin-top:2px;}
+  .cat-price{font-family:'IBM Plex Mono',monospace;font-size:15px;margin-top:10px;}
+  .cat-stock{font-size:11.5px;margin-top:6px;}
+
+  .empty-state{text-align:center;padding:60px 20px;color:var(--text-faint);}
+  .empty-state svg{width:38px;height:38px;margin-bottom:10px;opacity:.5;}
+  .empty-state p{font-size:13.5px;}
+
+  select.status-select{border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:12px;background:#fff;}
+
+  .tabs-mini{display:flex;gap:6px;margin-bottom:16px;}
+  .tabs-mini button{padding:6px 13px;border-radius:20px;border:1px solid var(--line);background:#fff;font-size:12.5px;color:var(--text-soft);}
+  .tabs-mini button.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+  .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;}
+  .idea-list{display:grid;gap:10px;margin-top:10px;}
+  .idea{display:flex;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:9px;background:#fff;}
+  .idea svg{width:17px;height:17px;color:var(--accent);flex-shrink:0;margin-top:1px;}
+  .idea b{font-size:13px;}
+  .idea p{margin:2px 0 0;font-size:12.5px;color:var(--text-soft);line-height:1.5;}
+
+  .note-box{background:var(--warm-light);color:#8A4B10;border-radius:9px;padding:11px 14px;font-size:12.5px;line-height:1.5;margin-top:12px;}
+
+  @media (max-width:800px){
+    #app{flex-direction:column;}
+    .sidebar{width:100%;flex-direction:row;align-items:center;padding:12px 14px;overflow-x:auto;}
+    .brand{border:none;padding:0;margin:0 14px 0 0;}
+    nav{flex-direction:row;flex:none;}
+    .navbtn .count{display:none;}
+    .team-note{display:none;}
+    main{padding:20px 16px 50px;}
+    .field-row,.field-row.three{grid-template-columns:1fr;}
+    .settings-grid{grid-template-columns:1fr;}
+    .measure-panel{grid-template-columns:1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+const ICONS = {
+  dashboard: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>`,
+  orders: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16l-1.5 12a2 2 0 0 1-2 1.8H7.5a2 2 0 0 1-2-1.8L4 7Z"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg>`,
+  stock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7l9-4 9 4-9 4-9-4Z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>`,
+  clients: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16.5 6.2A3.2 3.2 0 0 1 18 12.2"/><path d="M21.5 20c0-3-1.9-5.2-4.5-5.9"/></svg>`,
+  products: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>`,
+  invoices: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 2h9l4 4v16H6z"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>`,
+  settings: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.32 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>`,
+  plus: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>`,
+  search: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>`,
+  trash: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/></svg>`,
+  edit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5Z"/></svg>`,
+  fabric: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 3v15c0 1.7 1.3 3 3 3s3-1.3 3-3V6c0-1.1.9-2 2-2s2 .9 2 2v15"/><path d="M4 3h14"/><path d="M14 6v13c0 1.7 1.3 3 3 3s3-1.3 3-3V3"/></svg>`,
+  x: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>`,
+  download: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v13m0 0-4.5-4.5M12 16l4.5-4.5"/><path d="M4 19.5h16"/></svg>`,
+  scissors: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="2.4"/><circle cx="6" cy="18" r="2.4"/><path d="M8.5 8 20 20M20 4 8.5 16"/></svg>`,
+  bulb: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.5.4.9 1 1 1.7l.1.5h5l.1-.5c.1-.7.5-1.3 1-1.7A6 6 0 0 0 12 3Z"/></svg>`
+};
+
+const STORAGE_KEY = 'comptoir-data';
+const uid = (p) => p + '-' + Math.random().toString(36).slice(2,8);
+const eur = (n) => (Number(n)||0).toLocaleString('fr-FR',{style:'currency',currency:'EUR'});
+const UNIT_SHORT = {m:'m', piece:'pce', kit:'kit'};
+const unitPrice = (p) => `${eur(p.price)} / ${UNIT_SHORT[p.unit]||'u.'}`;
+const todayISO = () => new Date().toISOString().slice(0,10);
+const fmtDate = (iso) => new Date(iso).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});
+const round2 = (n) => Math.round((Number(n)||0)*100)/100;
+
+let state = {
+  view: 'dashboard',
+  data: { products: [], clients: [], orders: [], confectionOptions: [], company: {} },
+  loading: true,
+  saveError: false,
+  search: '',
+  invoiceFilter: 'all',
+  modal: null,
+};
+
+async function loadData(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, true);
+    if(res && res.value){
+      state.data = migrateData(JSON.parse(res.value));
+    } else {
+      state.data = seedData();
+      await persist();
+    }
+  }catch(e){
+    state.data = seedData();
+    try{ await persist(); }catch(e2){}
+  }
+  state.loading = false;
+  render();
+}
+
+function migrateData(d){
+  d.confectionOptions = d.confectionOptions || [];
+  d.company = d.company || {name:'', vat:'', address:'', iban:'', email:'', vatRate:21};
+  if(typeof d.company.vatRate !== 'number') d.company.vatRate = 21;
+  d.orders = (d.orders||[]).map(o=>({
+    ...o,
+    items: (o.items||[]).map(it=> it.type ? it : {type:'product', productId:it.productId, qty:it.qty, price:it.price, unit:it.unit, measure:null, optionIds:[]})
+  }));
+  return d;
+}
+
+async function persist(){
+  try{
+    const r = await window.storage.set(STORAGE_KEY, JSON.stringify(state.data), true);
+    if(!r) throw new Error('no result');
+    state.saveError = false;
+  }catch(e){
+    state.saveError = true;
+  }
+}
+
+function seedData(){
+  const p1 = uid('prod'), p2 = uid('prod'), p3 = uid('prod'), p4 = uid('prod'), p5 = uid('prod'), p6 = uid('prod');
+  const c1 = uid('cli'), c2 = uid('cli');
+  const opt1 = uid('opt'), opt2 = uid('opt'), opt3 = uid('opt'), opt4 = uid('opt');
+  return {
+    products: [
+      {id:p1, name:'Voilage Lin naturel', sku:'VOI-LIN-NAT', category:'Voilage', price:16.5, unit:'m', stock:42, lowStockAt:15},
+      {id:p2, name:'Rideau occultant Gris ardoise', sku:'RID-OCC-GRI', category:'Rideaux', price:34.0, unit:'m', stock:18, lowStockAt:10},
+      {id:p3, name:'Tenture velours Bleu nuit', sku:'TEN-VEL-BLE', category:'Tenture', price:42.5, unit:'m', stock:9, lowStockAt:10},
+      {id:p4, name:'Store bateau Beige sable', sku:'STO-BAT-BEI', category:'Store', price:79.0, unit:'pièce', stock:6, lowStockAt:5},
+      {id:p5, name:'Store enrouleur Blanc occultant', sku:'STO-ENR-BLA', category:'Store', price:65.0, unit:'pièce', stock:11, lowStockAt:5},
+      {id:p6, name:'Tringle laiton extensible 120-210cm', sku:'ACC-TRI-LAI', category:'Accessoire', price:22.0, unit:'pièce', stock:14, lowStockAt:6},
+    ],
+    clients: [
+      {id:c1, name:'Atelier Déco Moreau', email:'contact@decomoreau.fr', phone:'01 42 55 10 20', address:'12 rue des Lilas, Paris', vat:''},
+      {id:c2, name:'Mme Vandenberghe', email:'', phone:'+32 478 22 11 33', address:'8 avenue des Tilleuls, Bruxelles', vat:''},
+    ],
+    confectionOptions: [
+      {id:opt1, name:'Doublure occultante', price:9.0, unit:'m'},
+      {id:opt2, name:'Ourlet plombé', price:4.0, unit:'piece'},
+      {id:opt3, name:'Ruban fronceur', price:3.0, unit:'m'},
+      {id:opt4, name:'Pose à domicile', price:25.0, unit:'piece'},
+    ],
+    company: {name:'', vat:'', address:'', iban:'', email:'', vatRate:21},
+    orders: [
+      {id:uid('ord'), clientId:c1, date: todayISO(), status:'pending', paid:false,
+        items:[
+          {type:'product', productId:p1, qty:6, price:16.5, unit:'m', measure:null, optionIds:[]},
+          {type:'product', productId:p6, qty:2, price:22.0, unit:'pièce', measure:null, optionIds:[]},
+        ]},
+    ],
+  };
+}
+
+/* ---------------- helpers on data ---------------- */
+function optionById(id){ return state.data.confectionOptions.find(o=>o.id===id); }
+function itemLineTotal(item){
+  if(item.type==='supplement') return (Number(item.qty)||0) * (Number(item.price)||0);
+  const base = (Number(item.qty)||0) * (Number(item.price)||0);
+  const addl = (item.optionIds||[]).reduce((s,oid)=>{
+    const opt = optionById(oid); if(!opt) return s;
+    const factor = opt.unit==='m' ? (Number(item.qty)||0) : (item.measure ? (Number(item.measure.panels)||1) : (Number(item.qty)||1));
+    return s + opt.price*factor;
+  },0);
+  return base + addl;
+}
+function orderHT(o){ return round2(o.items.reduce((s,i)=>s+itemLineTotal(i),0)); }
+function orderTotals(o){
+  const ht = orderHT(o);
+  const rate = (state.data.company && typeof state.data.company.vatRate==='number') ? state.data.company.vatRate : 21;
+  const tva = round2(ht*rate/100);
+  return {ht, tva, ttc: round2(ht+tva), rate};
+}
+function clientName(id){ const c = state.data.clients.find(c=>c.id===id); return c ? c.name : 'Client supprimé'; }
+function productName(id){ const p = state.data.products.find(p=>p.id===id); return p ? p.name : 'Produit supprimé'; }
+function productById(id){ return state.data.products.find(p=>p.id===id); }
+function computeMeasureQty(width, height, panels){
+  const h = Number(height)||0, n = Number(panels)||1;
+  return round2(n * (h/100 + 0.2));
+}
+
+const STATUS_LABELS = {pending:'En attente', prep:'En préparation', shipped:'Expédiée', done:'Livrée', cancel:'Annulée'};
+const STATUS_ORDER = ['pending','prep','shipped','done','cancel'];
+
+/* ---------------- render root ---------------- */
+function render(){
+  const app = document.getElementById('app');
+  if(state.loading){
+    app.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100vh;color:var(--text-soft);font-size:14px;">Chargement des données…</div>`;
+    return;
+  }
+  app.innerHTML = `
+    ${renderSidebar()}
+    <main>
+      ${state.saveError ? `<div style="background:var(--danger-light);color:#8A2E1B;padding:10px 14px;border-radius:8px;font-size:12.5px;margin-bottom:16px;">Impossible d'enregistrer les dernières modifications. Vérifiez votre connexion.</div>` : ''}
+      ${renderView()}
+    </main>
+    ${state.modal ? renderModal() : ''}
+  `;
+  attachHandlers();
+}
+
+function renderSidebar(){
+  const lowStock = state.data.products.filter(p=>p.stock<=p.lowStockAt).length;
+  const pendingOrders = state.data.orders.filter(o=>o.status==='pending'||o.status==='prep').length;
+  const items = [
+    {key:'dashboard', label:'Tableau de bord', icon:ICONS.dashboard},
+    {key:'orders', label:'Commandes', icon:ICONS.orders, count:pendingOrders},
+    {key:'stock', label:'Stock', icon:ICONS.stock, count:lowStock, warn:lowStock>0},
+    {key:'clients', label:'Clients', icon:ICONS.clients},
+    {key:'products', label:'Catalogue', icon:ICONS.products},
+    {key:'invoices', label:'Factures', icon:ICONS.invoices},
+    {key:'settings', label:'Réglages', icon:ICONS.settings},
+  ];
+  return `
+  <div class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">C</div>
+      <div>
+        <div class="brand-name">Comptoir</div>
+        <div class="brand-sub">Gestion des commandes</div>
+      </div>
+    </div>
+    <nav>
+      ${items.map(it => `
+        <button class="navbtn ${state.view===it.key?'active':''}" data-nav="${it.key}">
+          ${it.icon}
+          <span>${it.label}</span>
+          ${it.count ? `<span class="count" style="${it.warn?'background:var(--warm);color:#fff;':''}">${it.count}</span>` : ''}
+        </button>
+      `).join('')}
+    </nav>
+    <div class="team-note">Données partagées avec toute l'équipe en temps réel.</div>
+  </div>`;
+}
+
+function renderView(){
+  if(state.view==='dashboard') return renderDashboard();
+  if(state.view==='orders') return renderOrders();
+  if(state.view==='stock') return renderStock();
+  if(state.view==='clients') return renderClients();
+  if(state.view==='products') return renderProductsCatalog();
+  if(state.view==='invoices') return renderInvoices();
+  if(state.view==='settings') return renderSettings();
+  return '';
+}
+
+/* ---------------- Dashboard ---------------- */
+function renderDashboard(){
+  const orders = state.data.orders;
+  const revenue = orders.filter(o=>o.status!=='cancel').reduce((s,o)=>s+orderTotals(o).ht,0);
+  const pending = orders.filter(o=>o.status==='pending'||o.status==='prep').length;
+  const lowStock = state.data.products.filter(p=>p.stock<=p.lowStockAt);
+  const unpaid = orders.filter(o=>!o.paid && o.status!=='cancel').length;
+  const recent = [...orders].sort((a,b)=> b.date.localeCompare(a.date)).slice(0,6);
+
+  return `
+    <div class="pagehead">
+      <div><h1>Tableau de bord</h1><div class="sub">Vue d'ensemble de l'activité</div></div>
+      <button class="btn primary" data-open-order-modal>${ICONS.plus} Nouvelle commande</button>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-label">Chiffre d'affaires (HT)</div><div class="stat-value">${eur(revenue)}</div><div class="stat-hint">${orders.length} commande${orders.length>1?'s':''} au total</div></div>
+      <div class="stat warm"><div class="stat-label">Commandes en cours</div><div class="stat-value">${pending}</div><div class="stat-hint">en attente ou préparation</div></div>
+      <div class="stat ${lowStock.length?'danger':''}"><div class="stat-label">Stock faible</div><div class="stat-value">${lowStock.length}</div><div class="stat-hint">produit${lowStock.length>1?'s':''} sous le seuil</div></div>
+      <div class="stat ${unpaid?'danger':''}"><div class="stat-label">Factures impayées</div><div class="stat-value">${unpaid}</div><div class="stat-hint">à relancer</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Commandes récentes</h3><button class="btn ghost small" data-nav="orders">Voir tout</button></div>
+      ${recent.length ? `<table>
+        <thead><tr><th>Commande</th><th>Client</th><th>Date</th><th>Statut</th><th style="text-align:right">Total TTC</th></tr></thead>
+        <tbody>
+          ${recent.map(o=>`
+            <tr style="cursor:pointer" data-open-order-detail="${o.id}">
+              <td class="mono">#${o.id.slice(-6)}</td>
+              <td>${clientName(o.clientId)}</td>
+              <td>${fmtDate(o.date)}</td>
+              <td><span class="badge ${o.status}">${STATUS_LABELS[o.status]}</span></td>
+              <td style="text-align:right" class="mono">${eur(orderTotals(o).ttc)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>` : emptyState('Aucune commande pour le moment.', ICONS.orders)}
+    </div>
+
+    ${lowStock.length ? `
+    <div class="panel">
+      <div class="panel-head"><h3>Alertes de stock</h3><button class="btn ghost small" data-nav="stock">Gérer le stock</button></div>
+      <table>
+        <thead><tr><th>Produit</th><th>Référence</th><th style="text-align:right">Stock</th><th style="text-align:right">Seuil</th></tr></thead>
+        <tbody>
+          ${lowStock.map(p=>`<tr><td>${p.name}</td><td class="mono">${p.sku}</td><td style="text-align:right"><span class="badge low">${p.stock}</span></td><td style="text-align:right" class="mono">${p.lowStockAt}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>` : ''}
+  `;
+}
+
+function emptyState(text, icon){
+  return `<div class="empty-state">${icon}<p>${text}</p></div>`;
+}
+
+/* ---------------- Orders ---------------- */
+function renderOrders(){
+  const q = state.search.toLowerCase();
+  let orders = [...state.data.orders].sort((a,b)=> b.date.localeCompare(a.date));
+  if(q) orders = orders.filter(o => clientName(o.clientId).toLowerCase().includes(q) || o.id.toLowerCase().includes(q));
+
+  return `
+    <div class="pagehead">
+      <div><h1>Commandes</h1><div class="sub">${state.data.orders.length} commande${state.data.orders.length>1?'s':''} au total</div></div>
+      <button class="btn primary" data-open-order-modal>${ICONS.plus} Nouvelle commande</button>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <div class="search"><span>${ICONS.search}</span><input type="text" placeholder="Rechercher un client ou une commande…" value="${state.search}" data-search-orders></div>
+      </div>
+      ${orders.length ? `<table>
+        <thead><tr><th>Commande</th><th>Client</th><th>Date</th><th>Articles</th><th>Statut</th><th>Paiement</th><th style="text-align:right">Total TTC</th></tr></thead>
+        <tbody>
+          ${orders.map(o=>`
+            <tr>
+              <td class="mono" style="cursor:pointer" data-open-order-detail="${o.id}">#${o.id.slice(-6)}</td>
+              <td style="cursor:pointer" data-open-order-detail="${o.id}">${clientName(o.clientId)}</td>
+              <td>${fmtDate(o.date)}</td>
+              <td>${o.items.length} ligne${o.items.length>1?'s':''}</td>
+              <td>
+                <select class="status-select" data-status-order="${o.id}">
+                  ${STATUS_ORDER.map(s=>`<option value="${s}" ${o.status===s?'selected':''}>${STATUS_LABELS[s]}</option>`).join('')}
+                </select>
+              </td>
+              <td><span class="badge ${o.paid?'paid':'unpaid'}" style="cursor:pointer" data-toggle-paid="${o.id}">${o.paid?'Payée':'Impayée'}</span></td>
+              <td style="text-align:right" class="mono">${eur(orderTotals(o).ttc)}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>` : emptyState(state.search ? 'Aucune commande ne correspond à votre recherche.' : 'Aucune commande. Créez la première.', ICONS.orders)}
+    </div>
+  `;
+}
+
+/* ---------------- Stock ---------------- */
+function renderStock(){
+  const q = state.search.toLowerCase();
+  let products = [...state.data.products].sort((a,b)=>a.name.localeCompare(b.name));
+  if(q) products = products.filter(p=>p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
+
+  return `
+    <div class="pagehead">
+      <div><h1>Stock</h1><div class="sub">${state.data.products.length} référence${state.data.products.length>1?'s':''}</div></div>
+      <button class="btn primary" data-open-product-modal>${ICONS.plus} Ajouter un produit</button>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <div class="search"><span>${ICONS.search}</span><input type="text" placeholder="Rechercher par nom ou référence…" value="${state.search}" data-search-stock></div>
+      </div>
+      ${products.length ? `<table>
+        <thead><tr><th>Produit</th><th>Référence</th><th>Catégorie</th><th style="text-align:right">Prix</th><th style="text-align:right">Stock</th><th></th></tr></thead>
+        <tbody>
+          ${products.map(p=>`
+            <tr>
+              <td>${p.name}</td>
+              <td class="mono">${p.sku}</td>
+              <td>${p.category||'—'}</td>
+              <td style="text-align:right" class="mono">${unitPrice(p)}</td>
+              <td style="text-align:right"><span class="badge ${p.stock<=p.lowStockAt?'low':'ok'}">${p.stock} ${UNIT_SHORT[p.unit]||''}</span></td>
+              <td style="text-align:right;white-space:nowrap;">
+                <button class="iconbtn" data-edit-product="${p.id}" title="Modifier" aria-label="Modifier">${ICONS.edit}</button>
+                <button class="iconbtn" data-delete-product="${p.id}" title="Supprimer" aria-label="Supprimer">${ICONS.trash}</button>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>` : emptyState(state.search ? 'Aucun produit ne correspond.' : 'Aucun produit en stock. Ajoutez-en un.', ICONS.stock)}
+    </div>
+  `;
+}
+
+/* ---------------- Clients ---------------- */
+function renderClients(){
+  const q = state.search.toLowerCase();
+  let clients = [...state.data.clients].sort((a,b)=>a.name.localeCompare(b.name));
+  if(q) clients = clients.filter(c=>c.name.toLowerCase().includes(q));
+
+  return `
+    <div class="pagehead">
+      <div><h1>Clients</h1><div class="sub">${state.data.clients.length} client${state.data.clients.length>1?'s':''}</div></div>
+      <button class="btn primary" data-open-client-modal>${ICONS.plus} Ajouter un client</button>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <div class="search"><span>${ICONS.search}</span><input type="text" placeholder="Rechercher un client…" value="${state.search}" data-search-clients></div>
+      </div>
+      ${clients.length ? `<table>
+        <thead><tr><th>Nom</th><th>Contact</th><th>Adresse</th><th style="text-align:right">Commandes</th><th></th></tr></thead>
+        <tbody>
+          ${clients.map(c=>{
+            const orders = state.data.orders.filter(o=>o.clientId===c.id);
+            return `<tr>
+              <td>${c.name}${c.vat?`<br><span class="mono" style="font-size:11px;color:var(--text-faint)">${c.vat}</span>`:''}</td>
+              <td>${c.email||''}${c.email&&c.phone?'<br>':''}${c.phone?`<span class="mono" style="font-size:12px;color:var(--text-soft)">${c.phone}</span>`:''}</td>
+              <td style="color:var(--text-soft);font-size:12.5px;">${c.address||'—'}</td>
+              <td style="text-align:right">${orders.length}</td>
+              <td style="text-align:right;white-space:nowrap;">
+                <button class="iconbtn" data-edit-client="${c.id}" title="Modifier" aria-label="Modifier">${ICONS.edit}</button>
+                <button class="iconbtn" data-delete-client="${c.id}" title="Supprimer" aria-label="Supprimer">${ICONS.trash}</button>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>` : emptyState(state.search ? 'Aucun client ne correspond.' : 'Aucun client. Ajoutez-en un.', ICONS.clients)}
+    </div>
+  `;
+}
+
+/* ---------------- Catalogue (Produits) ---------------- */
+function renderProductsCatalog(){
+  const q = state.search.toLowerCase();
+  let products = [...state.data.products].sort((a,b)=>a.name.localeCompare(b.name));
+  if(q) products = products.filter(p=>p.name.toLowerCase().includes(q) || (p.category||'').toLowerCase().includes(q));
+
+  return `
+    <div class="pagehead">
+      <div><h1>Catalogue produits</h1><div class="sub">Aperçu visuel à montrer ou consulter rapidement</div></div>
+      <button class="btn primary" data-open-product-modal>${ICONS.plus} Ajouter un produit</button>
+    </div>
+    <div style="margin-bottom:16px;"><div class="search" style="max-width:340px;"><span>${ICONS.search}</span><input type="text" placeholder="Rechercher un produit…" value="${state.search}" data-search-catalog></div></div>
+    ${products.length ? `<div class="cat-grid">
+      ${products.map(p=>`
+        <div class="cat-card">
+          <div class="cat-swatch">${ICONS.fabric}</div>
+          <h4>${p.name}</h4>
+          <div class="cat-cat">${p.category||'Sans catégorie'}</div>
+          <div class="cat-price mono">${unitPrice(p)}</div>
+          <div class="cat-stock"><span class="badge ${p.stock<=p.lowStockAt?'low':'ok'}">${p.stock} ${UNIT_SHORT[p.unit]||''} en stock</span></div>
+        </div>
+      `).join('')}
+    </div>` : emptyState('Aucun produit dans le catalogue.', ICONS.products)}
+  `;
+}
+
+/* ---------------- Invoices (Factures) ---------------- */
+function renderInvoices(){
+  let orders = [...state.data.orders].filter(o=>o.status!=='cancel').sort((a,b)=> b.date.localeCompare(a.date));
+  if(state.invoiceFilter==='paid') orders = orders.filter(o=>o.paid);
+  if(state.invoiceFilter==='unpaid') orders = orders.filter(o=>!o.paid);
+
+  return `
+    <div class="pagehead">
+      <div><h1>Factures</h1><div class="sub">Générées automatiquement à partir des commandes</div></div>
+    </div>
+    <div class="tabs-mini">
+      <button data-invoice-filter="all" class="${state.invoiceFilter==='all'?'active':''}">Toutes</button>
+      <button data-invoice-filter="unpaid" class="${state.invoiceFilter==='unpaid'?'active':''}">Impayées</button>
+      <button data-invoice-filter="paid" class="${state.invoiceFilter==='paid'?'active':''}">Payées</button>
+    </div>
+    <div class="panel">
+      ${orders.length ? `<table>
+        <thead><tr><th>Facture</th><th>Client</th><th>Date</th><th>Statut</th><th style="text-align:right">Montant TTC</th><th></th></tr></thead>
+        <tbody>
+          ${orders.map(o=>`
+            <tr>
+              <td class="mono">FAC-${o.id.slice(-6)}</td>
+              <td>${clientName(o.clientId)}</td>
+              <td>${fmtDate(o.date)}</td>
+              <td><span class="badge ${o.paid?'paid':'unpaid'}">${o.paid?'Payée':'Impayée'}</span></td>
+              <td style="text-align:right" class="mono">${eur(orderTotals(o).ttc)}</td>
+              <td style="text-align:right"><button class="btn ghost small" data-open-order-detail="${o.id}">Voir</button></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>` : emptyState('Aucune facture pour ce filtre.', ICONS.invoices)}
+    </div>
+  `;
+}
+
+/* ---------------- Settings (Réglages) ---------------- */
+function renderSettings(){
+  const c = state.data.company || {};
+  const opts = state.data.confectionOptions;
+  return `
+    <div class="pagehead">
+      <div><h1>Réglages</h1><div class="sub">Informations de facturation et options de confection</div></div>
+    </div>
+    <div class="settings-grid">
+      <div class="panel">
+        <div class="panel-head"><h3>Mon entreprise</h3></div>
+        <div class="panel-body">
+          <form id="company-form">
+            <div class="field"><label>Nom de l'entreprise</label><input type="text" id="co-name" value="${c.name||''}" placeholder="Ex. Rideaux &amp; Cie SRL"></div>
+            <div class="field-row">
+              <div class="field"><label>Numéro de TVA</label><input type="text" id="co-vat" value="${c.vat||''}" placeholder="BE0123456789"></div>
+              <div class="field"><label>Taux de TVA (%)</label><input type="number" id="co-rate" value="${c.vatRate!=null?c.vatRate:21}" step="0.5" min="0"></div>
+            </div>
+            <div class="field"><label>Adresse</label><textarea id="co-address" rows="2" placeholder="Rue, code postal, ville">${c.address||''}</textarea></div>
+            <div class="field-row">
+              <div class="field"><label>IBAN</label><input type="text" id="co-iban" value="${c.iban||''}" placeholder="BE00 0000 0000 0000"></div>
+              <div class="field"><label>E-mail de facturation</label><input type="email" id="co-email" value="${c.email||''}" placeholder="facturation@exemple.be"></div>
+            </div>
+            <div class="modal-actions" style="margin-top:6px;justify-content:flex-start;">
+              <button type="submit" class="btn primary">Enregistrer</button>
+            </div>
+          </form>
+          <div class="note-box">Ces informations apparaissent sur vos factures et dans l'export UBL / Peppol. Elles sont nécessaires pour la facturation électronique en Belgique.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3>Options de confection</h3><button class="btn ghost small" data-open-option-modal>${ICONS.plus} Ajouter</button></div>
+        ${opts.length ? `<table>
+          <thead><tr><th>Option</th><th style="text-align:right">Supplément</th><th></th></tr></thead>
+          <tbody>
+            ${opts.map(o=>`
+              <tr>
+                <td>${o.name}</td>
+                <td style="text-align:right" class="mono">${eur(o.price)} / ${o.unit==='m'?'m':'pièce'}</td>
+                <td style="text-align:right;white-space:nowrap;">
+                  <button class="iconbtn" data-edit-option="${o.id}" title="Modifier" aria-label="Modifier">${ICONS.edit}</button>
+                  <button class="iconbtn" data-delete-option="${o.id}" title="Supprimer" aria-label="Supprimer">${ICONS.trash}</button>
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table>` : emptyState('Aucune option de confection. Ajoutez la première.', ICONS.scissors)}
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>Idées pour faire évoluer votre outil</h3></div>
+      <div class="panel-body">
+        <div class="idea-list">
+          <div class="idea">${ICONS.bulb}<div><b>Devis avant commande</b><p>Ajouter un statut « devis » en amont, à convertir en commande une fois le client d'accord — utile pour le sur-mesure où le prix se discute.</p></div></div>
+          <div class="idea">${ICONS.bulb}<div><b>Acomptes</b><p>Suivre un acompte à la commande (souvent 30–50% en confection sur mesure) puis le solde à la livraison, plutôt qu'un simple payée/impayée.</p></div></div>
+          <div class="idea">${ICONS.bulb}<div><b>Prise de rendez-vous de pose</b><p>Un calendrier pour planifier les métrés et les poses à domicile de votre équipe.</p></div></div>
+          <div class="idea">${ICONS.bulb}<div><b>Relances automatiques</b><p>Un rappel visuel (ou email) pour les factures impayées après X jours.</p></div></div>
+          <div class="idea">${ICONS.bulb}<div><b>Export comptable</b><p>Export CSV périodique de vos factures pour votre comptable ou logiciel de compta.</p></div></div>
+          <div class="idea">${ICONS.bulb}<div><b>Rôles utilisateurs</b><p>Distinguer vendeur / atelier / administration avec des droits différents, utile passé 5 personnes.</p></div></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------------- Modals ---------------- */
+function renderModal(){
+  const m = state.modal;
+  if(m.type==='product') return renderProductModal(m.payload);
+  if(m.type==='client') return renderClientModal(m.payload);
+  if(m.type==='order') return renderOrderModal(m.payload);
+  if(m.type==='orderDetail') return renderOrderDetailModal(m.payload);
+  if(m.type==='option') return renderOptionModal(m.payload);
+  return '';
+}
+
+function renderProductModal(p){
+  const editing = !!p;
+  p = p || {name:'',sku:'',category:'',price:'',unit:'m',stock:'',lowStockAt:5};
+  return `
+  <div class="overlay" data-close-modal>
+    <div class="modal" data-stop>
+      <h2>${editing?'Modifier le produit':'Nouveau produit'}</h2>
+      <form id="product-form">
+        <div class="field"><label>Nom du produit</label><input type="text" id="pf-name" value="${p.name}" placeholder="Ex. Voilage Lin naturel"></div>
+        <div class="field-row">
+          <div class="field"><label>Référence</label><input type="text" id="pf-sku" value="${p.sku}" placeholder="Ex. VOI-LIN-NAT"></div>
+          <div class="field"><label>Catégorie</label><input type="text" id="pf-category" value="${p.category||''}" placeholder="Voilage, Rideaux, Tenture, Store…"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Vendu au</label>
+            <select id="pf-unit">
+              <option value="m" ${p.unit==='m'?'selected':''}>Mètre (tissu au mètre)</option>
+              <option value="piece" ${p.unit==='piece'?'selected':''}>Pièce (store, rideau confectionné…)</option>
+              <option value="kit" ${p.unit==='kit'?'selected':''}>Kit / ensemble</option>
+            </select>
+          </div>
+          <div class="field"><label>Prix par unité (€)</label><input type="number" id="pf-price" value="${p.price}" step="0.01" min="0"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Quantité en stock</label><input type="number" id="pf-stock" value="${p.stock}" step="1" min="0"></div>
+          <div class="field"><label>Seuil d'alerte stock faible</label><input type="number" id="pf-low" value="${p.lowStockAt}" step="1" min="0"></div>
+        </div>
+        <div class="err" id="pf-err">Merci de renseigner un nom, un prix et une quantité valides.</div>
+        <div class="modal-actions">
+          <button type="button" class="btn ghost" data-close-modal>Annuler</button>
+          <button type="submit" class="btn primary">${editing?'Enregistrer':'Ajouter le produit'}</button>
+        </div>
+      </form>
+    </div>
+  </div>`;
+}
+
+function renderClientModal(c){
+  const editing = !!c;
+  c = c || {name:'',email:'',phone:'',address:'',vat:''};
+  return `
+  <div class="overlay" data-close-modal>
+    <div class="modal" data-stop>
+      <h2>${editing?'Modifier le client':'Nouveau client'}</h2>
+      <form id="client-form">
+        <div class="field"><label>Nom du client / entreprise</label><input type="text" id="cf-name" value="${c.name}" placeholder="Ex. Atelier Déco Moreau"></div>
+        <div class="field-row">
+          <div class="field"><label>E-mail</label><input type="email" id="cf-email" value="${c.email||''}" placeholder="contact@exemple.be"></div>
+          <div class="field"><label>Téléphone</label><input type="text" id="cf-phone" value="${c.phone||''}" placeholder="+32 4 78 12 34 56"></div>
+        </div>
+        <div class="field"><label>Adresse</label><textarea id="cf-address" rows="2" placeholder="Adresse de livraison">${c.address||''}</textarea></div>
+        <div class="field"><label>N° de TVA (optionnel, pour les clients professionnels)</label><input type="text" id="cf-vat" value="${c.vat||''}" placeholder="BE0123456789"></div>
+        <div class="err" id="cf-err">Merci de renseigner au moins un nom.</div>
+        <div class="modal-actions">
+          <button type="button" class="btn ghost" data-close-modal>Annuler</button>
+          <button type="submit" class="btn primary">${editing?'Enregistrer':'Ajouter le client'}</button>
+        </div>
+      </form>
+    </div>
+  </div>`;
+}
+
+function renderOptionModal(o){
+  const editing = !!o;
+  o = o || {name:'', price:'', unit:'m'};
+  return `
+  <div class="overlay" data-close-modal>
+    <div class="modal" data-stop>
+      <h2>${editing?"Modifier l'option":'Nouvelle option de confection'}</h2>
+      <form id="option-form">
+        <div class="field"><label>Nom de l'option</label><input type="text" id="of2-name" value="${o.name}" placeholder="Ex. Doublure occultante"></div>
+        <div class="field-row">
+          <div class="field"><label>Supplément (€)</label><input type="number" id="of2-price" value="${o.price}" step="0.01" min="0"></div>
+          <div class="field"><label>Calculé par</label>
+            <select id="of2-unit">
+              <option value="m" ${o.unit==='m'?'selected':''}>Mètre de tissu commandé</option>
+              <option value="piece" ${o.unit==='piece'?'selected':''}>Pièce / panneau</option>
+            </select>
+          </div>
+        </div>
+        <div class="err" id="of2-err">Merci de renseigner un nom et un prix valides.</div>
+        <div class="modal-actions">
+          <button type="button" class="btn ghost" data-close-modal>Annuler</button>
+          <button type="submit" class="btn primary">${editing?'Enregistrer':"Ajouter l'option"}</button>
+        </div>
+      </form>
+    </div>
+  </div>`;
+}
+
+let orderDraft = null;
+function renderOrderModal(existing){
+  if(!orderDraft){
+    orderDraft = existing ? JSON.parse(JSON.stringify(existing)) : {clientId:'', date: todayISO(), status:'pending', paid:false, items:[]};
+    if(orderDraft.items.length===0 && state.data.products.length){
+      orderDraft.items.push({type:'product', productId:'', qty:1, price:0, unit:'piece', measure:null, optionIds:[]});
+    }
+  }
+  const totals = orderTotals(orderDraft);
+  const productItems = orderDraft.items.filter(i=>i.type!=='supplement');
+  const suppItems = orderDraft.items.filter(i=>i.type==='supplement');
+
+  return `
+  <div class="overlay" data-close-modal>
+    <div class="modal wide" data-stop>
+      <h2>${existing?'Modifier la commande':'Nouvelle commande'}</h2>
+      <div class="field"><label>Client</label>
+        <select id="of-client">
+          <option value="">Sélectionner un client…</option>
+          ${state.data.clients.map(c=>`<option value="${c.id}" ${orderDraft.clientId===c.id?'selected':''}>${c.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Date</label><input type="date" id="of-date" value="${orderDraft.date}"></div>
+        <div class="field"><label>Statut</label>
+          <select id="of-status">${STATUS_ORDER.map(s=>`<option value="${s}" ${orderDraft.status===s?'selected':''}>${STATUS_LABELS[s]}</option>`).join('')}</select>
+        </div>
+      </div>
+
+      <label style="display:block;font-size:12px;font-weight:500;color:var(--text-soft);margin:16px 0 8px;">Articles</label>
+      <div id="line-items">
+        ${orderDraft.items.map((it,idx)=> it.type==='supplement' ? renderSupplementRow(it,idx) : renderProductLine(it,idx)).join('')}
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px;">
+        <button type="button" class="btn ghost small" id="add-line">${ICONS.plus} Ajouter un article</button>
+        <button type="button" class="btn ghost small" id="add-supplement">${ICONS.plus} Ajouter un supplément</button>
+      </div>
+      <div class="err" id="of-err">Sélectionnez un client et au moins un article ou supplément valide.</div>
+
+      <div class="order-total">
+        <div class="order-total-row"><span>Sous-total HT</span><span class="mono">${eur(totals.ht)}</span></div>
+        <div class="order-total-row"><span>TVA (${totals.rate}%)</span><span class="mono">${eur(totals.tva)}</span></div>
+        <div class="order-total-row grand"><span style="font-family:Inter;font-size:13px;color:var(--text-soft);font-weight:500;">Total TTC</span><span>${eur(totals.ttc)}</span></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" data-close-modal>Annuler</button>
+        <button type="button" class="btn primary" id="of-save">${existing?'Enregistrer':'Créer la commande'}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderProductLine(it, idx){
+  const opts = state.data.confectionOptions;
+  const total = itemLineTotal(it);
+  return `
+  <div class="item-card" data-line="${idx}">
+    <div class="item-top">
+      <select class="line-product" data-idx="${idx}">
+        <option value="">Choisir un produit…</option>
+        ${state.data.products.map(p=>`<option value="${p.id}" ${it.productId===p.id?'selected':''}>${p.name} — ${unitPrice(p)}</option>`).join('')}
+      </select>
+      <input type="number" class="line-qty" data-idx="${idx}" value="${it.qty}" min="0" step="${it.unit==='m'?'0.1':'1'}" placeholder="${it.unit==='m'?'m':'Qté'}" ${it.measure?'disabled':''}>
+      <input type="text" class="mono" value="${eur(total)}" disabled style="text-align:right;background:#F3F5F0;">
+      <button type="button" class="iconbtn line-remove" data-idx="${idx}" aria-label="Retirer">${ICONS.x}</button>
+    </div>
+    ${it.unit==='m' ? `
+      <label class="measure-toggle">
+        <input type="checkbox" class="line-measure-toggle" data-idx="${idx}" ${it.measure?'checked':''}>
+        ${ICONS.scissors} Confection sur mesure
+      </label>
+      ${it.measure ? `
+      <div class="measure-panel">
+        <div class="field"><label>Largeur (cm)</label><input type="number" class="measure-width" data-idx="${idx}" value="${it.measure.width||''}" min="0" step="1"></div>
+        <div class="field"><label>Hauteur (cm)</label><input type="number" class="measure-height" data-idx="${idx}" value="${it.measure.height||''}" min="0" step="1"></div>
+        <div class="field"><label>Nombre de pans</label><input type="number" class="measure-panels" data-idx="${idx}" value="${it.measure.panels||1}" min="1" step="1"></div>
+        <div class="measure-result">Métrage suggéré : ${it.qty} m (hauteur + 20cm d'ourlet, par pan)</div>
+      </div>` : ''}
+    ` : ''}
+    ${opts.length ? `
+      <div class="option-chips">
+        ${opts.map(o=>`
+          <label class="option-chip ${it.optionIds&&it.optionIds.includes(o.id)?'on':''}">
+            <input type="checkbox" class="line-option" data-idx="${idx}" data-opt="${o.id}" ${it.optionIds&&it.optionIds.includes(o.id)?'checked':''}>
+            ${o.name} (+${eur(o.price)}/${o.unit==='m'?'m':'pièce'})
+          </label>
+        `).join('')}
+      </div>
+    ` : ''}
+  </div>`;
+}
+
+function renderSupplementRow(it, idx){
+  const total = itemLineTotal(it);
+  return `
+  <div class="item-card" data-line="${idx}">
+    <div class="supp-row">
+      <input type="text" class="supp-desc" data-idx="${idx}" value="${it.description||''}" placeholder="Description du supplément (ex. Frais de livraison, Heures de pose…)">
+      <input type="number" class="supp-qty" data-idx="${idx}" value="${it.qty}" min="1" step="1" placeholder="Qté">
+      <input type="number" class="supp-price" data-idx="${idx}" value="${it.price}" min="0" step="0.01" placeholder="Prix €">
+      <button type="button" class="iconbtn line-remove" data-idx="${idx}" aria-label="Retirer">${ICONS.x}</button>
+    </div>
+    <div class="hint" style="text-align:right;margin-top:4px;">Supplément manuel — sous-total ${eur(total)}</div>
+  </div>`;
+}
+
+function renderOrderDetailModal(order){
+  const client = state.data.clients.find(c=>c.id===order.clientId);
+  const totals = orderTotals(order);
+  const company = state.data.company || {};
+  const companyReady = company.name && company.vat;
+  return `
+  <div class="overlay" data-close-modal>
+    <div class="modal" data-stop style="max-width:460px;padding:0;background:none;">
+      <div class="ticket">
+        <div class="ticket-top">
+          <div class="tno">FAC-${order.id.slice(-6)} · ${fmtDate(order.date)}</div>
+          <h2>${client ? client.name : 'Client supprimé'}</h2>
+          <div style="margin-top:8px;display:flex;gap:8px;">
+            <span class="badge ${order.status}">${STATUS_LABELS[order.status]}</span>
+            <span class="badge ${order.paid?'paid':'unpaid'}">${order.paid?'Payée':'Impayée'}</span>
+          </div>
+        </div>
+        <div class="perf"></div>
+        <div class="ticket-body">
+          ${order.items.map(it=>{
+            if(it.type==='supplement'){
+              return `<div class="ticket-row"><span>${it.description||'Supplément'}${it.qty>1?` ×${it.qty}`:''}</span><span class="mono">${eur(itemLineTotal(it))}</span></div>`;
+            }
+            const prod = productById(it.productId);
+            const unitLabel = prod ? UNIT_SHORT[prod.unit] : '';
+            let extra = '';
+            if(it.measure) extra += `<div class="ticket-row muted">Sur mesure — ${it.measure.width||'?'}×${it.measure.height||'?'} cm, ${it.measure.panels||1} pan${(it.measure.panels||1)>1?'s':''}</div>`;
+            (it.optionIds||[]).forEach(oid=>{
+              const opt = optionById(oid);
+              if(opt) extra += `<div class="ticket-row muted">+ ${opt.name}</div>`;
+            });
+            return `<div class="ticket-row"><span>${it.qty}${unitLabel==='m'?' m':' ×'} ${productName(it.productId)}</span><span class="mono">${eur(itemLineTotal(it))}</span></div>${extra}`;
+          }).join('')}
+          <div class="ticket-row sub" style="border-top:1px solid var(--line);margin-top:8px;padding-top:10px;"><span>Sous-total HT</span><span class="mono">${eur(totals.ht)}</span></div>
+          <div class="ticket-row sub"><span>TVA (${totals.rate}%)</span><span class="mono">${eur(totals.tva)}</span></div>
+          <div class="ticket-total"><span>Total TTC</span><span>${eur(totals.ttc)}</span></div>
+        </div>
+        <div class="ticket-foot">
+          ${companyReady ? `
+            <button type="button" class="btn small" style="width:100%;justify-content:center;" data-export-ubl="${order.id}">${ICONS.download} Exporter en UBL (Peppol)</button>
+            <div class="hint" style="margin-top:8px;">À importer dans votre plateforme d'envoi Peppol (Billit, Recommand, Storecove…) — cette appli ne se connecte pas directement au réseau Peppol.</div>
+          ` : `<div class="hint">Complétez vos informations d'entreprise dans <b>Réglages</b> pour activer l'export UBL / Peppol.</div>`}
+        </div>
+      </div>
+      <div class="modal-actions" style="padding:16px 4px 0;">
+        <button type="button" class="btn ghost" data-close-modal>Fermer</button>
+        <button type="button" class="btn" data-toggle-paid="${order.id}">${order.paid?'Marquer impayée':'Marquer payée'}</button>
+        <button type="button" class="btn primary" data-edit-order="${order.id}">Modifier</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+/* ---------------- UBL / Peppol export ---------------- */
+function escapeXml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
+}
+function generateUBL(order){
+  const c = state.data.company || {};
+  const client = state.data.clients.find(cl=>cl.id===order.clientId) || {};
+  const totals = orderTotals(order);
+  const invId = `FAC-${order.id.slice(-6)}`;
+  const lines = order.items.map((it,idx)=>{
+    const name = it.type==='supplement' ? (it.description||'Supplément') : productName(it.productId);
+    const qty = it.qty || 1;
+    const unitCode = it.type!=='supplement' && it.unit==='m' ? 'MTR' : 'C62';
+    const lineTotal = round2(itemLineTotal(it));
+    const unitPriceVal = qty ? round2(lineTotal/qty) : lineTotal;
+    return `  <cac:InvoiceLine>
+    <cbc:ID>${idx+1}</cbc:ID>
+    <cbc:InvoicedQuantity unitCode="${unitCode}">${qty}</cbc:InvoicedQuantity>
+    <cbc:LineExtensionAmount currencyID="EUR">${lineTotal.toFixed(2)}</cbc:LineExtensionAmount>
+    <cac:Item>
+      <cbc:Name>${escapeXml(name)}</cbc:Name>
+    </cac:Item>
+    <cac:Price>
+      <cbc:PriceAmount currencyID="EUR">${unitPriceVal.toFixed(2)}</cbc:PriceAmount>
+    </cac:Price>
+  </cac:InvoiceLine>`;
+  }).join('\n');
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+  xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+  xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+  <cbc:CustomizationID>urn:cen.eu:en16931:2017#compliant#urn:fdc:peppol.eu:2017:poacc:billing:3.0</cbc:CustomizationID>
+  <cbc:ProfileID>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</cbc:ProfileID>
+  <cbc:ID>${escapeXml(invId)}</cbc:ID>
+  <cbc:IssueDate>${order.date}</cbc:IssueDate>
+  <cbc:InvoiceTypeCode>380</cbc:InvoiceTypeCode>
+  <cbc:DocumentCurrencyCode>EUR</cbc:DocumentCurrencyCode>
+  <cac:AccountingSupplierParty>
+    <cac:Party>
+      <cac:PartyName><cbc:Name>${escapeXml(c.name)}</cbc:Name></cac:PartyName>
+      <cac:PostalAddress><cbc:StreetName>${escapeXml(c.address)}</cbc:StreetName><cac:Country><cbc:IdentificationCode>BE</cbc:IdentificationCode></cac:Country></cac:PostalAddress>
+      <cac:PartyTaxScheme><cbc:CompanyID>${escapeXml(c.vat)}</cbc:CompanyID><cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:PartyTaxScheme>
+      <cac:Contact><cbc:ElectronicMail>${escapeXml(c.email)}</cbc:ElectronicMail></cac:Contact>
+    </cac:Party>
+  </cac:AccountingSupplierParty>
+  <cac:AccountingCustomerParty>
+    <cac:Party>
+      <cac:PartyName><cbc:Name>${escapeXml(client.name)}</cbc:Name></cac:PartyName>
+      <cac:PostalAddress><cbc:StreetName>${escapeXml(client.address)}</cbc:StreetName><cac:Country><cbc:IdentificationCode>BE</cbc:IdentificationCode></cac:Country></cac:PostalAddress>
+      ${client.vat ? `<cac:PartyTaxScheme><cbc:CompanyID>${escapeXml(client.vat)}</cbc:CompanyID><cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:PartyTaxScheme>` : ''}
+      <cac:Contact><cbc:ElectronicMail>${escapeXml(client.email)}</cbc:ElectronicMail></cac:Contact>
+    </cac:Party>
+  </cac:AccountingCustomerParty>
+  <cac:TaxTotal>
+    <cbc:TaxAmount currencyID="EUR">${totals.tva.toFixed(2)}</cbc:TaxAmount>
+    <cac:TaxSubtotal>
+      <cbc:TaxableAmount currencyID="EUR">${totals.ht.toFixed(2)}</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="EUR">${totals.tva.toFixed(2)}</cbc:TaxAmount>
+      <cac:TaxCategory>
+        <cbc:Percent>${totals.rate}</cbc:Percent>
+        <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme>
+      </cac:TaxCategory>
+    </cac:TaxSubtotal>
+  </cac:TaxTotal>
+  <cac:LegalMonetaryTotal>
+    <cbc:LineExtensionAmount currencyID="EUR">${totals.ht.toFixed(2)}</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="EUR">${totals.ht.toFixed(2)}</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="EUR">${totals.ttc.toFixed(2)}</cbc:TaxInclusiveAmount>
+    <cbc:PayableAmount currencyID="EUR">${totals.ttc.toFixed(2)}</cbc:PayableAmount>
+  </cac:LegalMonetaryTotal>
+${lines}
+</Invoice>`;
+}
+
+function downloadFile(filename, content, mime){
+  const blob = new Blob([content], {type: mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ---------------- Event handling ---------------- */
+function attachHandlers(){
+  const app = document.getElementById('app');
+
+  app.querySelectorAll('[data-nav]').forEach(el=>el.addEventListener('click', ()=>{
+    state.view = el.getAttribute('data-nav'); state.search=''; render();
+  }));
+
+  const searchEl = app.querySelector('[data-search-orders],[data-search-stock],[data-search-clients],[data-search-catalog]');
+  if(searchEl){
+    searchEl.addEventListener('input', (e)=>{ state.search = e.target.value; renderKeepFocus(searchEl); });
+  }
+
+  app.querySelectorAll('[data-invoice-filter]').forEach(el=>el.addEventListener('click', ()=>{
+    state.invoiceFilter = el.getAttribute('data-invoice-filter'); render();
+  }));
+
+  app.querySelectorAll('[data-status-order]').forEach(el=>el.addEventListener('change', async (e)=>{
+    const id = el.getAttribute('data-status-order');
+    const o = state.data.orders.find(o=>o.id===id);
+    if(o){ o.status = e.target.value; await persist(); render(); }
+  }));
+
+  app.querySelectorAll('[data-toggle-paid]').forEach(el=>el.addEventListener('click', async ()=>{
+    const id = el.getAttribute('data-toggle-paid');
+    const o = state.data.orders.find(o=>o.id===id);
+    if(o){ o.paid = !o.paid; await persist();
+      if(state.modal && state.modal.type==='orderDetail') state.modal.payload = o;
+      render();
+    }
+  }));
+
+  app.querySelectorAll('[data-open-order-detail]').forEach(el=>el.addEventListener('click', ()=>{
+    const id = el.getAttribute('data-open-order-detail');
+    const o = state.data.orders.find(o=>o.id===id);
+    if(o){ state.modal = {type:'orderDetail', payload:o}; render(); }
+  }));
+
+  app.querySelectorAll('[data-export-ubl]').forEach(el=>el.addEventListener('click', ()=>{
+    const id = el.getAttribute('data-export-ubl');
+    const o = state.data.orders.find(o=>o.id===id);
+    if(o){ downloadFile(`FAC-${o.id.slice(-6)}-ubl.xml`, generateUBL(o), 'application/xml'); }
+  }));
+
+  app.querySelectorAll('[data-edit-order]').forEach(el=>el.addEventListener('click', ()=>{
+    const id = el.getAttribute('data-edit-order');
+    const o = state.data.orders.find(o=>o.id===id);
+    orderDraft = null;
+    state.modal = {type:'order', payload:o}; render();
+  }));
+
+  // product modal open/edit/delete
+  const openProductBtn = app.querySelector('[data-open-product-modal]');
+  if(openProductBtn) openProductBtn.addEventListener('click', ()=>{ state.modal={type:'product', payload:null}; render(); });
+  app.querySelectorAll('[data-edit-product]').forEach(el=>el.addEventListener('click', ()=>{
+    const p = state.data.products.find(p=>p.id===el.getAttribute('data-edit-product'));
+    state.modal = {type:'product', payload:p}; render();
+  }));
+  app.querySelectorAll('[data-delete-product]').forEach(el=>el.addEventListener('click', async ()=>{
+    const id = el.getAttribute('data-delete-product');
+    if(confirm('Supprimer ce produit du stock ?')){
+      state.data.products = state.data.products.filter(p=>p.id!==id);
+      await persist(); render();
+    }
+  }));
+
+  // client modal open/edit/delete
+  const openClientBtn = app.querySelector('[data-open-client-modal]');
+  if(openClientBtn) openClientBtn.addEventListener('click', ()=>{ state.modal={type:'client', payload:null}; render(); });
+  app.querySelectorAll('[data-edit-client]').forEach(el=>el.addEventListener('click', ()=>{
+    const c = state.data.clients.find(c=>c.id===el.getAttribute('data-edit-client'));
+    state.modal = {type:'client', payload:c}; render();
+  }));
+  app.querySelectorAll('[data-delete-client]').forEach(el=>el.addEventListener('click', async ()=>{
+    const id = el.getAttribute('data-delete-client');
+    if(confirm('Supprimer ce client ? Ses commandes existantes seront conservées.')){
+      state.data.clients = state.data.clients.filter(c=>c.id!==id);
+      await persist(); render();
+    }
+  }));
+
+  // confection option modal open/edit/delete
+  const openOptionBtn = app.querySelector('[data-open-option-modal]');
+  if(openOptionBtn) openOptionBtn.addEventListener('click', ()=>{ state.modal={type:'option', payload:null}; render(); });
+  app.querySelectorAll('[data-edit-option]').forEach(el=>el.addEventListener('click', ()=>{
+    const o = state.data.confectionOptions.find(o=>o.id===el.getAttribute('data-edit-option'));
+    state.modal = {type:'option', payload:o}; render();
+  }));
+  app.querySelectorAll('[data-delete-option]').forEach(el=>el.addEventListener('click', async ()=>{
+    const id = el.getAttribute('data-delete-option');
+    if(confirm('Supprimer cette option de confection ?')){
+      state.data.confectionOptions = state.data.confectionOptions.filter(o=>o.id!==id);
+      await persist(); render();
+    }
+  }));
+
+  // order modal open
+  const openOrderBtn = app.querySelector('[data-open-order-modal]');
+  if(openOrderBtn) openOrderBtn.addEventListener('click', ()=>{ orderDraft = null; state.modal = {type:'order', payload:null}; render(); });
+
+  // close modal
+  app.querySelectorAll('[data-close-modal]').forEach(el=>el.addEventListener('click', (e)=>{
+    if(e.target !== el) return;
+    state.modal = null; orderDraft = null; render();
+  }));
+  app.querySelectorAll('[data-stop]').forEach(el=>el.addEventListener('click', (e)=>e.stopPropagation()));
+
+  // product form submit
+  const pf = document.getElementById('product-form');
+  if(pf) pf.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const name = document.getElementById('pf-name').value.trim();
+    const price = parseFloat(document.getElementById('pf-price').value);
+    const stock = parseInt(document.getElementById('pf-stock').value);
+    const errEl = document.getElementById('pf-err');
+    if(!name || isNaN(price) || price < 0 || isNaN(stock) || stock < 0){
+      errEl.classList.add('show'); return;
+    }
+    errEl.classList.remove('show');
+    const sku = document.getElementById('pf-sku').value.trim();
+    const category = document.getElementById('pf-category').value.trim();
+    const unit = document.getElementById('pf-unit').value;
+    const lowStockAt = parseInt(document.getElementById('pf-low').value) || 0;
+    const editing = state.modal.payload;
+    if(editing){
+      Object.assign(editing, {name, sku, category, price, unit, stock, lowStockAt});
+    } else {
+      state.data.products.push({id:uid('prod'), name, sku, category, price, unit, stock, lowStockAt});
+    }
+    await persist();
+    state.modal = null; render();
+  });
+
+  // client form submit
+  const cf = document.getElementById('client-form');
+  if(cf) cf.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const name = document.getElementById('cf-name').value.trim();
+    const errEl = document.getElementById('cf-err');
+    if(!name){ errEl.classList.add('show'); return; }
+    errEl.classList.remove('show');
+    const email = document.getElementById('cf-email').value.trim();
+    const phone = document.getElementById('cf-phone').value.trim();
+    const address = document.getElementById('cf-address').value.trim();
+    const vat = document.getElementById('cf-vat').value.trim();
+    const editing = state.modal.payload;
+    if(editing){
+      Object.assign(editing, {name, email, phone, address, vat});
+    } else {
+      state.data.clients.push({id:uid('cli'), name, email, phone, address, vat});
+    }
+    await persist();
+    state.modal = null; render();
+  });
+
+  // confection option form submit
+  const of2 = document.getElementById('option-form');
+  if(of2) of2.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const name = document.getElementById('of2-name').value.trim();
+    const price = parseFloat(document.getElementById('of2-price').value);
+    const errEl = document.getElementById('of2-err');
+    if(!name || isNaN(price) || price < 0){ errEl.classList.add('show'); return; }
+    errEl.classList.remove('show');
+    const unit = document.getElementById('of2-unit').value;
+    const editing = state.modal.payload;
+    if(editing){
+      Object.assign(editing, {name, price, unit});
+    } else {
+      state.data.confectionOptions.push({id:uid('opt'), name, price, unit});
+    }
+    await persist();
+    state.modal = null; render();
+  });
+
+  // company settings form submit
+  const cof = document.getElementById('company-form');
+  if(cof) cof.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    state.data.company = {
+      name: document.getElementById('co-name').value.trim(),
+      vat: document.getElementById('co-vat').value.trim(),
+      vatRate: parseFloat(document.getElementById('co-rate').value) || 0,
+      address: document.getElementById('co-address').value.trim(),
+      iban: document.getElementById('co-iban').value.trim(),
+      email: document.getElementById('co-email').value.trim(),
+    };
+    await persist();
+    render();
+  });
+
+  // order builder interactions
+  const clientSel = document.getElementById('of-client');
+  if(clientSel) clientSel.addEventListener('change', (e)=>{ orderDraft.clientId = e.target.value; });
+  const dateInput = document.getElementById('of-date');
+  if(dateInput) dateInput.addEventListener('change', (e)=>{ orderDraft.date = e.target.value; });
+  const statusSel = document.getElementById('of-status');
+  if(statusSel) statusSel.addEventListener('change', (e)=>{ orderDraft.status = e.target.value; });
+
+  app.querySelectorAll('.line-product').forEach(el=>el.addEventListener('change', (e)=>{
+    const idx = parseInt(el.getAttribute('data-idx'));
+    const prod = productById(e.target.value);
+    orderDraft.items[idx].productId = e.target.value;
+    orderDraft.items[idx].price = prod ? prod.price : 0;
+    orderDraft.items[idx].unit = prod ? prod.unit : 'piece';
+    orderDraft.items[idx].measure = null;
+    rerenderOrderModalInPlace();
+  }));
+  app.querySelectorAll('.line-qty').forEach(el=>el.addEventListener('input', (e)=>{
+    const idx = parseInt(el.getAttribute('data-idx'));
+    orderDraft.items[idx].qty = parseFloat(e.target.value) || 0;
+    rerenderOrderModalInPlace();
+  }));
+  app.querySelectorAll('.line-measure-toggle').forEach(el=>el.addEventListener('change', (e)=>{
+    const idx = parseInt(el.getAttribute('data-idx'));
+    if(e.target.checked){
+      orderDraft.items[idx].measure = {width:'', height:'', panels:1};
+    } else {
+      orderDraft.items[idx].measure = null;
+    }
+    rerenderOrderModalInPlace();
+  }));
+  app.querySelectorAll('.measure-width,.measure-height,.measure-panels').forEach(el=>el.addEventListener('input', (e)=>{
+    const idx = parseInt(el.getAttribute('data-idx'));
+    const item = orderDraft.items[idx];
+    if(!item.measure) return;
+    if(el.classList.contains('measure-width')) item.measure.width = e.target.value;
+    if(el.classList.contains('measure-height')) item.measure.height = e.target.value;
+    if(el.classList.contains('measure-panels')) item.measure.panels = e.target.value;
+    item.qty = computeMeasureQty(item.measure.width, item.measure.height, item.measure.panels);
+    rerenderOrderModalInPlace();
+  }));
+  app.querySelectorAll('.line-option').forEach(el=>el.addEventListener('change', (e)=>{
+    const idx = parseInt(el.getAttribute('data-idx'));
+    const optId = el.getAttribute('data-opt');
+    const item = orderDraft.items[idx];
+    item.optionIds = item.optionIds || [];
+    if(e.target.checked){
+      if(!item.optionIds.includes(optId)) item.optionIds.push(optId);
+    } else {
+      item.optionIds = item.optionIds.filter(id=>id!==optId);
+    }
+    rerenderOrderModalInPlace();
+  }));
+  app.querySelectorAll('.supp-desc').forEach(el=>el.addEventListener('input', (e)=>{
+    const idx = parseInt(el.getAttribute('data-idx'));
+    orderDraft.items[idx].description = e.target.value;
+  }));
+  app.querySelectorAll('.supp-qty').forEach(el=>el.addEventListener('input', (e)=>{
+    const idx = parseInt(el.getAttribute('data-idx'));
+    orderDraft.items[idx].qty = parseFloat(e.target.value) || 0;
+    rerenderOrderModalInPlace();
+  }));
+  app.querySelectorAll('.supp-price').forEach(el=>el.addEventListener('input', (e)=>{
+    const idx = parseInt(el.getAttribute('data-idx'));
+    orderDraft.items[idx].price = parseFloat(e.target.value) || 0;
+    rerenderOrderModalInPlace();
+  }));
+  app.querySelectorAll('.line-remove').forEach(el=>el.addEventListener('click', (e)=>{
+    const idx = parseInt(el.getAttribute('data-idx'));
+    orderDraft.items.splice(idx,1);
+    rerenderOrderModalInPlace();
+  }));
+  const addLineBtn = document.getElementById('add-line');
+  if(addLineBtn) addLineBtn.addEventListener('click', ()=>{
+    orderDraft.items.push({type:'product', productId:'', qty:1, price:0, unit:'piece', measure:null, optionIds:[]});
+    rerenderOrderModalInPlace();
+  });
+  const addSuppBtn = document.getElementById('add-supplement');
+  if(addSuppBtn) addSuppBtn.addEventListener('click', ()=>{
+    orderDraft.items.push({type:'supplement', description:'', qty:1, price:0});
+    rerenderOrderModalInPlace();
+  });
+
+  const ofSave = document.getElementById('of-save');
+  if(ofSave) ofSave.addEventListener('click', async ()=>{
+    const errEl = document.getElementById('of-err');
+    const validItems = orderDraft.items.filter(i=>{
+      if(i.type==='supplement') return i.description && i.description.trim() && i.qty > 0;
+      return i.productId && i.qty > 0;
+    });
+    if(!orderDraft.clientId || validItems.length===0){
+      errEl.classList.add('show'); return;
+    }
+    errEl.classList.remove('show');
+    orderDraft.items = validItems;
+    const existing = state.modal.payload;
+    if(existing){
+      Object.assign(existing, orderDraft);
+    } else {
+      state.data.orders.push({id:uid('ord'), ...orderDraft});
+    }
+    await persist();
+    orderDraft = null;
+    state.modal = null; render();
+  });
+}
+
+function rerenderOrderModalInPlace(){
+  const overlay = document.querySelector('.overlay');
+  if(!overlay) return;
+  overlay.outerHTML = renderModal();
+  attachHandlers();
+}
+
+function renderKeepFocus(prevEl){
+  const app = document.getElementById('app');
+  const selectorAttr = prevEl.getAttribute('data-search-orders')!==null ? 'data-search-orders'
+    : prevEl.getAttribute('data-search-stock')!==null ? 'data-search-stock'
+    : prevEl.getAttribute('data-search-clients')!==null ? 'data-search-clients' : 'data-search-catalog';
+  const cursorPos = prevEl.selectionStart;
+  render();
+  const newEl = document.querySelector(`[${selectorAttr}]`);
+  if(newEl){ newEl.focus(); newEl.setSelectionRange(cursorPos, cursorPos); }
+}
+
+loadData();
+</script>
+</body>
+</html>

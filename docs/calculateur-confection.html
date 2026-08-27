@@ -1,0 +1,622 @@
+<title>Calculateur Confection ATA-TEX</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+  rel="stylesheet"
+/>
+
+<style>
+  :root {
+    --paper: #f4efe6;
+    --paper-card: #fbf8f2;
+    --rule: #e0d6c4;
+    --rule-strong: #cabfa8;
+    --ink: #2a2018;
+    --ink-soft: #6d6252;
+    --ink-faint: #978a75;
+    --accent: #9a5a2c;        /* cognac / cuivre du logo */
+    --accent-soft: #efe0d0;
+    --thread: #3c5a4c;        /* vert bobine de fil */
+    --thread-soft: #dfe8e1;
+    --danger: #a5401f;
+    --focus: #9a5a2c;
+    --shadow: 0 1px 2px rgba(42, 32, 24, 0.06), 0 8px 24px -12px rgba(42, 32, 24, 0.18);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1e1a15;
+      --paper-card: #272119;
+      --rule: #3a3228;
+      --rule-strong: #4c4133;
+      --ink: #ece3d5;
+      --ink-soft: #b3a690;
+      --ink-faint: #8a7d67;
+      --accent: #d18f5f;
+      --accent-soft: #3a2c1f;
+      --thread: #8fb3a1;
+      --thread-soft: #26312b;
+      --danger: #e0805e;
+      --focus: #d18f5f;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px -14px rgba(0, 0, 0, 0.6);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #1e1a15;
+    --paper-card: #272119;
+    --rule: #3a3228;
+    --rule-strong: #4c4133;
+    --ink: #ece3d5;
+    --ink-soft: #b3a690;
+    --ink-faint: #8a7d67;
+    --accent: #d18f5f;
+    --accent-soft: #3a2c1f;
+    --thread: #8fb3a1;
+    --thread-soft: #26312b;
+    --danger: #e0805e;
+    --focus: #d18f5f;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 30px -14px rgba(0, 0, 0, 0.6);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background-color: var(--paper);
+    background-image:
+      linear-gradient(var(--rule) 1px, transparent 1px);
+    background-size: 100% 2.1rem;
+    background-position: 0 -1px;
+    color: var(--ink);
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: clamp(1.25rem, 4vw, 3rem) clamp(1rem, 4vw, 2rem) 4rem;
+  }
+
+  header { margin-bottom: 2rem; }
+
+  .eyebrow {
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.5rem;
+  }
+
+  h1 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(1.6rem, 5vw, 2.3rem);
+    line-height: 1.15;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+    margin: 0 0 0.6rem;
+  }
+
+  .lede {
+    color: var(--ink-soft);
+    font-size: 0.98rem;
+    max-width: 34rem;
+    margin: 0;
+  }
+
+  .card {
+    background: var(--paper-card);
+    border: 1px solid var(--rule-strong);
+    border-radius: 4px;
+    box-shadow: var(--shadow);
+    padding: clamp(1.1rem, 3.5vw, 1.8rem);
+    margin-bottom: 1.5rem;
+  }
+
+  .card > h2 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 1.15rem;
+    margin: 0 0 1.2rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+  .card > h2 .num {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.8rem;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    padding: 0.05rem 0.5rem;
+  }
+
+  form { display: grid; gap: 1.15rem; }
+  @media (min-width: 34rem) {
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.15rem; }
+  }
+
+  label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--ink-soft);
+    margin-bottom: 0.4rem;
+  }
+  .hint { font-weight: 400; color: var(--ink-faint); }
+
+  input, select {
+    width: 100%;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 1rem;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--rule-strong);
+    border-radius: 3px;
+    padding: 0.7rem 0.75rem;
+    min-height: 2.9rem;
+  }
+  select {
+    font-family: "Inter", sans-serif;
+    appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--ink-soft) 50%),
+      linear-gradient(135deg, var(--ink-soft) 50%, transparent 50%);
+    background-position: calc(100% - 1.1rem) 1.25rem, calc(100% - 0.75rem) 1.25rem;
+    background-size: 0.35rem 0.35rem, 0.35rem 0.35rem;
+    background-repeat: no-repeat;
+    padding-right: 2.5rem;
+  }
+  input:focus-visible, select:focus-visible, button:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .field-inline {
+    position: relative;
+  }
+  .field-inline .unit {
+    position: absolute;
+    right: 0.85rem;
+    top: 2.35rem;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+    pointer-events: none;
+  }
+  .field-inline input { padding-right: 2.4rem; }
+
+  /* ---------- Bon de coupe (résultat) ---------- */
+  .slip {
+    background: var(--paper-card);
+    border: 1px solid var(--rule-strong);
+    border-radius: 4px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+  .slip-head {
+    background: var(--thread-soft);
+    border-bottom: 1px solid var(--rule-strong);
+    padding: 0.9rem 1.2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .slip-head h2 {
+    font-family: "Fraunces", Georgia, serif;
+    font-size: 1.05rem;
+    margin: 0;
+  }
+  .slip-head .tag {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--thread);
+  }
+  .slip-body { padding: 1.2rem; }
+
+  .calc-line {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem 1rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px dashed var(--rule);
+    font-size: 0.92rem;
+  }
+  .calc-line:last-child { border-bottom: 0; }
+  .calc-line .lbl { color: var(--ink-soft); }
+  .calc-line .expr {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+    grid-column: 1 / -1;
+    margin-top: 0.15rem;
+  }
+  .calc-line .val {
+    font-family: "IBM Plex Mono", monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .result-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 2px solid var(--ink);
+  }
+  .result-row .rk {
+    font-family: "Fraunces", Georgia, serif;
+    font-size: 1.05rem;
+  }
+  .result-row .rv {
+    font-family: "IBM Plex Mono", monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  .result-row.minor .rk { font-family: "Inter", sans-serif; font-size: 0.85rem; color: var(--ink-soft); }
+  .result-row.minor {
+    border-top: 1px dashed var(--rule);
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+  }
+  .result-row.minor .rv { font-size: 0.95rem; font-weight: 500; color: var(--ink-soft); }
+
+  .metrage-callout {
+    background: var(--accent-soft);
+    border-radius: 3px;
+    padding: 0.75rem 1rem;
+    margin: 0.5rem 0 0.25rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: baseline;
+    gap: 1rem;
+  }
+  .metrage-callout .rk { font-size: 0.9rem; color: var(--ink); font-weight: 600; }
+  .metrage-callout .rv {
+    font-family: "IBM Plex Mono", monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .err {
+    color: var(--danger);
+    font-size: 0.85rem;
+    padding: 0.9rem 1.2rem 1.2rem;
+  }
+
+  /* ---------- Examples ---------- */
+  .examples { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: 0.4rem; }
+  button.ex {
+    font-family: "Inter", sans-serif;
+    font-size: 0.82rem;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--rule-strong);
+    border-radius: 999px;
+    padding: 0.4rem 0.85rem;
+    cursor: pointer;
+  }
+  button.ex:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ---------- Types table ---------- */
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 30rem; }
+  caption {
+    text-align: left;
+    color: var(--ink-faint);
+    font-size: 0.8rem;
+    margin-bottom: 0.6rem;
+  }
+  th, td {
+    text-align: right;
+    padding: 0.55rem 0.7rem;
+    border-bottom: 1px solid var(--rule);
+    font-variant-numeric: tabular-nums;
+    font-family: "IBM Plex Mono", monospace;
+  }
+  th:first-child, td:first-child { text-align: left; font-family: "Inter", sans-serif; }
+  thead th {
+    font-family: "Inter", sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 600;
+    border-bottom-color: var(--rule-strong);
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+
+  .formula {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 0.82rem;
+    line-height: 1.8;
+    background: var(--paper);
+    border-left: 2px solid var(--accent);
+    padding: 0.9rem 1rem;
+    border-radius: 0 3px 3px 0;
+    color: var(--ink-soft);
+    overflow-x: auto;
+  }
+  .formula b { color: var(--ink); font-weight: 600; }
+
+  footer {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule-strong);
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">ATA-TEX · Bon de coupe</p>
+    <h1>Calculateur de confection sur mesure</h1>
+    <p class="lede">
+      Le client donne une largeur. On en déduit le métrage de tissu à commander et
+      le prix. Cette page applique la formule exacte prévue pour l'application — elle
+      sert à valider les chiffres avant la mise en production.
+    </p>
+  </header>
+
+  <div class="card">
+    <h2><span class="num">1</span> Saisie</h2>
+    <form id="f" autocomplete="off">
+      <div class="field-inline">
+        <label for="largeur">Largeur souhaitée <span class="hint">(seule saisie du vendeur)</span></label>
+        <input id="largeur" type="number" inputmode="decimal" step="0.01" min="0" value="3" />
+        <span class="unit">m</span>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <label for="type">Type de confection</label>
+          <select id="type"></select>
+        </div>
+        <div>
+          <label for="cat">Catégorie du produit</label>
+          <select id="cat">
+            <option value="rideau_voilage">Rideau / Voilage</option>
+            <option value="tenture">Tenture</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field-inline">
+        <label for="prix">Prix du tissu au mètre <span class="hint">(fiche produit)</span></label>
+        <input id="prix" type="number" inputmode="decimal" step="0.01" min="0" value="18" />
+        <span class="unit">€ / m</span>
+      </div>
+
+      <div>
+        <label>Exemples à charger</label>
+        <div class="examples" id="examples"></div>
+      </div>
+    </form>
+  </div>
+
+  <div class="slip" id="slip"><!-- rendu dynamique --></div>
+
+  <div class="card">
+    <h2><span class="num">2</span> La formule</h2>
+    <div class="formula">
+      <b>m</b> (métrage à commander) = largeur × <b>facteur</b> + <b>marge fixe</b><br />
+      <b>frais</b> = catégorie « tenture » ? frais_tenture : frais_rideau_voilage<br />
+      <b>prix total</b> = ( prix_tissu_au_mètre + <b>frais</b> ) × <b>m</b>
+    </div>
+    <p style="font-size: 0.86rem; color: var(--ink-soft); margin: 1rem 0 0;">
+      Le métrage est arrondi à 2 décimales, puis le prix total est calculé sur ce
+      métrage arrondi (le total affiché = métrage affiché × prix au mètre). La TVA
+      belge de 21 % est indiquée à titre indicatif ; elle s'applique sur la commande,
+      pas dans ce calcul.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">3</span> Types de confection pré-remplis</h2>
+    <div class="table-scroll">
+      <table>
+        <caption>Modifiables par l'administrateur dans l'application. À valider.</caption>
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Facteur</th>
+            <th>Marge (m)</th>
+            <th>Frais rideau / voilage</th>
+            <th>Frais tenture</th>
+          </tr>
+        </thead>
+        <tbody id="types-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>
+    Prototype de validation — ATA-TEX, Bruxelles. Les chiffres proviennent
+    uniquement de la formule ci-dessus, sans aucune valeur codée en dur autre que
+    les types pré-remplis affichés.
+  </footer>
+</div>
+
+<script>
+  "use strict";
+
+  var CONFECTION_TYPES = [
+    { nom: "Froncé",   facteur: 2,   marge_fixe: 0.2, frais_rideau_voilage: 4,   frais_tenture: 5 },
+    { nom: "Plié",     facteur: 3,   marge_fixe: 0.2, frais_rideau_voilage: 4,   frais_tenture: 5 },
+    { nom: "Wave 6cm", facteur: 2.8, marge_fixe: 0.2, frais_rideau_voilage: 10,  frais_tenture: 10 },
+    { nom: "Wave 8cm", facteur: 2.2, marge_fixe: 0.2, frais_rideau_voilage: 10,  frais_tenture: 10 },
+    { nom: "Store",    facteur: 1,   marge_fixe: 0.2, frais_rideau_voilage: 120, frais_tenture: 120 }
+  ];
+
+  var EXAMPLES = [
+    { label: "Froncé · 3,00 m · voilage à 18 €", largeur: 3, type: "Froncé", cat: "rideau_voilage", prix: 18 },
+    { label: "Wave 8cm · 2,40 m · tenture à 32 €", largeur: 2.4, type: "Wave 8cm", cat: "tenture", prix: 32 },
+    { label: "Plié · 4,50 m · rideau à 24,50 €", largeur: 4.5, type: "Plié", cat: "rideau_voilage", prix: 24.5 },
+    { label: "Store · 1,20 m · store à 0 €", largeur: 1.2, type: "Store", cat: "rideau_voilage", prix: 0 }
+  ];
+
+  var round2 = function (n) { return Math.round((Number(n) || 0) * 100) / 100; };
+  var eur = function (n) {
+    return (Number(n) || 0).toLocaleString("fr-BE", { style: "currency", currency: "EUR" });
+  };
+  var num = function (n, d) {
+    return (Number(n) || 0).toLocaleString("fr-BE", { minimumFractionDigits: d || 0, maximumFractionDigits: d != null ? d : 2 });
+  };
+
+  function fraisPourCategorie(t, cat) {
+    return cat === "tenture" ? t.frais_tenture : t.frais_rideau_voilage;
+  }
+
+  function calculerConfection(largeur, prixTissu, cat, t) {
+    largeur = Number(largeur) || 0;
+    prixTissu = Number(prixTissu) || 0;
+    var metrage = round2(largeur * t.facteur + t.marge_fixe);
+    var frais = fraisPourCategorie(t, cat);
+    var prixAuMetreTotal = round2(prixTissu + frais);
+    var prixTotal = round2((prixTissu + frais) * metrage);
+    return { metrage: metrage, frais: frais, prixTissu: prixTissu, prixAuMetreTotal: prixAuMetreTotal, prixTotal: prixTotal };
+  }
+
+  var $ = function (id) { return document.getElementById(id); };
+  var typeSel = $("type");
+  var catSel = $("cat");
+  var largeurInput = $("largeur");
+  var prixInput = $("prix");
+
+  CONFECTION_TYPES.forEach(function (t) {
+    var o = document.createElement("option");
+    o.value = t.nom;
+    o.textContent = t.nom;
+    typeSel.appendChild(o);
+  });
+
+  var tbody = $("types-body");
+  CONFECTION_TYPES.forEach(function (t) {
+    var tr = document.createElement("tr");
+    tr.innerHTML =
+      "<td>" + t.nom + "</td>" +
+      "<td>" + num(t.facteur, 2) + "</td>" +
+      "<td>" + num(t.marge_fixe, 2) + "</td>" +
+      "<td>" + eur(t.frais_rideau_voilage) + " / m</td>" +
+      "<td>" + eur(t.frais_tenture) + " / m</td>";
+    tbody.appendChild(tr);
+  });
+
+  var exWrap = $("examples");
+  EXAMPLES.forEach(function (ex) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "ex";
+    b.textContent = ex.label;
+    b.addEventListener("click", function () {
+      largeurInput.value = ex.largeur;
+      typeSel.value = ex.type;
+      catSel.value = ex.cat;
+      prixInput.value = ex.prix;
+      render();
+    });
+    exWrap.appendChild(b);
+  });
+
+  var CAT_LABELS = { rideau_voilage: "Rideau / Voilage", tenture: "Tenture" };
+
+  function render() {
+    var t = CONFECTION_TYPES.filter(function (x) { return x.nom === typeSel.value; })[0] || CONFECTION_TYPES[0];
+    var largeur = parseFloat(largeurInput.value);
+    var prix = parseFloat(prixInput.value);
+    var cat = catSel.value;
+    var slip = $("slip");
+
+    if (isNaN(largeur) || largeur <= 0 || isNaN(prix) || prix < 0) {
+      slip.innerHTML =
+        '<div class="slip-head"><h2>Bon de coupe</h2><span class="tag">en attente</span></div>' +
+        '<p class="err">Renseignez une largeur supérieure à 0 et un prix au mètre valide.</p>';
+      return;
+    }
+
+    var r = calculerConfection(largeur, prix, cat, t);
+    var tva = round2(r.prixTotal * 0.21);
+    var ttc = round2(r.prixTotal + tva);
+
+    slip.innerHTML =
+      '<div class="slip-head">' +
+        '<h2>Bon de coupe</h2>' +
+        '<span class="tag">' + t.nom + " · " + CAT_LABELS[cat] + "</span>" +
+      "</div>" +
+      '<div class="slip-body">' +
+        '<div class="calc-line">' +
+          '<span class="lbl">Facteur du type « ' + t.nom + ' »</span>' +
+          '<span class="val">× ' + num(t.facteur, 2) + "</span>" +
+        "</div>" +
+        '<div class="calc-line">' +
+          '<span class="lbl">Marge fixe du type</span>' +
+          '<span class="val">+ ' + num(t.marge_fixe, 2) + " m</span>" +
+        "</div>" +
+        '<div class="metrage-callout">' +
+          '<span class="rk">Métrage de tissu à commander</span>' +
+          '<span class="rv">' + num(r.metrage, 2) + " m</span>" +
+        "</div>" +
+        '<div class="calc-line">' +
+          '<span class="expr">' + num(largeur, 2) + " m × " + num(t.facteur, 2) + " + " + num(t.marge_fixe, 2) + " m = " + num(r.metrage, 2) + " m</span>" +
+        "</div>" +
+
+        '<div class="calc-line" style="margin-top:.6rem">' +
+          '<span class="lbl">Prix du tissu au mètre</span>' +
+          '<span class="val">' + eur(r.prixTissu) + " / m</span>" +
+        "</div>" +
+        '<div class="calc-line">' +
+          '<span class="lbl">Frais de confection — ' + CAT_LABELS[cat] + "</span>" +
+          '<span class="val">+ ' + eur(r.frais) + " / m</span>" +
+        "</div>" +
+        '<div class="calc-line">' +
+          '<span class="lbl">Prix au mètre tout compris</span>' +
+          '<span class="val">' + eur(r.prixAuMetreTotal) + " / m</span>" +
+        "</div>" +
+
+        '<div class="result-row">' +
+          '<span class="rk">Prix de la confection <span style="font-weight:400;color:var(--ink-faint);font-family:Inter">(hors TVA)</span></span>' +
+          '<span class="rv">' + eur(r.prixTotal) + "</span>" +
+        "</div>" +
+        '<div class="calc-line">' +
+          '<span class="expr">( ' + eur(r.prixTissu) + " + " + eur(r.frais) + " ) × " + num(r.metrage, 2) + " m = " + eur(r.prixTotal) + "</span>" +
+        "</div>" +
+        '<div class="result-row minor">' +
+          "<span class=\"rk\">TVA 21 % (indicatif)</span>" +
+          '<span class="rv">' + eur(tva) + "</span>" +
+        "</div>" +
+        '<div class="result-row minor">' +
+          "<span class=\"rk\">Total TTC (indicatif)</span>" +
+          '<span class="rv">' + eur(ttc) + "</span>" +
+        "</div>" +
+      "</div>";
+  }
+
+  ["input", "change"].forEach(function (evt) {
+    $("f").addEventListener(evt, render);
+  });
+  render();
+</script>
