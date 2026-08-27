@@ -132,7 +132,9 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
     unit: (product?.unit ?? 'm') as ProductUnit,
     stock: product?.stock ?? 0,
     low_stock_at: product?.low_stock_at ?? 5,
-    confection_category: product?.confection_category ?? ('' as '' | 'rideau_voilage' | 'tenture'),
+    max_qty_per_line: product?.max_qty_per_line ?? ('' as number | ''),
+    confection_category:
+      product?.confection_category ?? ('' as '' | 'rideau_voilage' | 'tenture' | 'store'),
     photo_url: product?.photo_url ?? '',
     active: product?.active ?? true,
   }));
@@ -149,6 +151,7 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
       unit: f.unit,
       stock: Number(f.stock) || 0,
       low_stock_at: Number(f.low_stock_at) || 0,
+      max_qty_per_line: f.max_qty_per_line === '' ? null : Number(f.max_qty_per_line) || null,
       confection_category: f.unit === 'm' && f.confection_category ? f.confection_category : null,
       photo_url: f.photo_url.trim(),
       active: f.active,
@@ -202,8 +205,9 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
         <div className="field">
           <label>Vendu au</label>
           <select value={f.unit} onChange={(e) => setF({ ...f, unit: e.target.value as ProductUnit })}>
-            <option value="m">Mètre (tissu au mètre)</option>
+            <option value="m">Mètre (tissu / rail / ruflette…)</option>
             <option value="piece">Pièce</option>
+            <option value="paquet_100">Paquet de 100</option>
             <option value="kit">Kit / ensemble</option>
           </select>
         </div>
@@ -218,6 +222,20 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
           />
         </div>
       </div>
+      <div className="field">
+        <label>Quantité maximum par ligne de commande</label>
+        <input
+          type="number"
+          step="0.1"
+          min={0}
+          placeholder="Sans limite"
+          value={f.max_qty_per_line}
+          onChange={(e) =>
+            setF({ ...f, max_qty_per_line: e.target.value === '' ? '' : parseFloat(e.target.value) || 0 })
+          }
+        />
+        <div className="hint">Ex. rail = 6 m. Au-delà, l'utilisateur doit ajouter une 2ᵉ ligne.</div>
+      </div>
       {f.unit === 'm' && (
         <div className="field">
           <label>Catégorie de confection</label>
@@ -227,12 +245,13 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
               setF({ ...f, confection_category: e.target.value as typeof f.confection_category })
             }
           >
-            <option value="">Non confectionnable</option>
+            <option value="">Non confectionnable (rail, ruflette…)</option>
             <option value="rideau_voilage">{CONFECTION_CATEGORY_LABEL.rideau_voilage}</option>
             <option value="tenture">{CONFECTION_CATEGORY_LABEL.tenture}</option>
+            <option value="store">{CONFECTION_CATEGORY_LABEL.store}</option>
           </select>
           <div className="hint">
-            Détermine quels frais de confection s'appliquent (colonne « rideau/voilage » ou « tenture »).
+            Détermine quels frais de confection s'appliquent (rideau/voilage, tenture ou store).
           </div>
         </div>
       )}

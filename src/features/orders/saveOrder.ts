@@ -1,5 +1,12 @@
 import { supabase, sendStatusEmail } from '@/lib/supabase';
-import type { ConfectionType, DiscountKind, OrderFulfillment, OrderStatus, Product } from '@/types';
+import type {
+  ConfectionType,
+  DiscountKind,
+  OrderFulfillment,
+  OrderStatus,
+  Product,
+  ProductCategory,
+} from '@/types';
 import { computeLine, type DraftItem } from './orderLines';
 import { emailTemplateKeyFor } from './statusEmail';
 
@@ -27,6 +34,7 @@ export async function saveOrder(
   draft: OrderDraft,
   products: Product[],
   confectionTypes: ConfectionType[],
+  categories: ProductCategory[],
   previousStatus: OrderStatus | null,
 ): Promise<SaveResult> {
   const validItems = draft.items.filter((d) => {
@@ -37,6 +45,12 @@ export async function saveOrder(
 
   if (!draft.client_id) return { ok: false, error: 'Sélectionnez un client.' };
   if (validItems.length === 0) return { ok: false, error: 'Ajoutez au moins une ligne valide.' };
+
+  // Bloque l'enregistrement si une ligne est en erreur (largeur hors limites, quantité max…)
+  const lineErrors = validItems
+    .map((d) => computeLine(d, products, confectionTypes, categories).error)
+    .filter(Boolean);
+  if (lineErrors.length > 0) return { ok: false, error: lineErrors[0] as string };
 
   const orderPayload = {
     client_id: draft.client_id,
@@ -63,7 +77,7 @@ export async function saveOrder(
   }
 
   const rows = validItems.map((d, i) => {
-    const c = computeLine(d, products, confectionTypes);
+    const c = computeLine(d, products, confectionTypes, categories);
     return {
       order_id: orderId,
       position: i,

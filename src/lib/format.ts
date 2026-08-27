@@ -8,18 +8,21 @@ import type {
 export const UNIT_LABEL: Record<ProductUnit, string> = {
   m: 'm',
   piece: 'pièce',
+  paquet_100: 'paquet de 100',
   kit: 'kit',
 };
 
 export const UNIT_SHORT: Record<ProductUnit, string> = {
   m: 'm',
   piece: 'pce',
+  paquet_100: 'pqt/100',
   kit: 'kit',
 };
 
 export const CONFECTION_CATEGORY_LABEL: Record<ConfectionCategory, string> = {
   rideau_voilage: 'Rideau / Voilage',
   tenture: 'Tenture',
+  store: 'Store',
 };
 
 export const STATUS_LABEL: Record<OrderStatus, string> = {

@@ -1,9 +1,11 @@
-import { calculerConfection } from '@/lib/confection';
+import { calculerConfection, validerLargeur } from '@/lib/confection';
 import { round2 } from '@/lib/money';
+import { UNIT_LABEL } from '@/lib/format';
 import type {
   ConfectionType,
   OrderItem,
   Product,
+  ProductCategory,
   Service,
 } from '@/types';
 
@@ -116,6 +118,7 @@ export function computeLine(
   d: DraftItem,
   products: Product[],
   confectionTypes: ConfectionType[],
+  categories: ProductCategory[] = [],
 ): ComputedLine {
   if (d.kind === 'service' || d.kind === 'libre') {
     return {
@@ -156,6 +159,11 @@ export function computeLine(
 
   if (!d.is_confection) {
     base.line_total = round2(base.qty * base.unit_price);
+    if (product && product.max_qty_per_line != null && base.qty > product.max_qty_per_line) {
+      base.error =
+        `Maximum ${product.max_qty_per_line} ${UNIT_LABEL[product.unit]} par ligne. ` +
+        `Ajoutez une deuxième ligne du même produit pour le reste.`;
+    }
     return base;
   }
 
@@ -171,7 +179,11 @@ export function computeLine(
       error: 'Ce produit n\'a pas de catégorie de confection (à définir dans le catalogue).',
     };
   if (!type) return { ...base, error: 'Choisissez un type de confection.' };
-  if (!d.largeur || d.largeur <= 0) return { ...base, error: 'Saisissez la largeur souhaitée (m).' };
+
+  const categoryLargeurMax =
+    categories.find((c) => c.id === product.category_id)?.largeur_max ?? null;
+  const largeurError = validerLargeur(d.largeur ?? 0, type, categoryLargeurMax);
+  if (largeurError) return { ...base, largeur: d.largeur, error: largeurError };
 
   const r = calculerConfection({
     largeur: d.largeur,

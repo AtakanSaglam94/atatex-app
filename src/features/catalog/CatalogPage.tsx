@@ -61,7 +61,10 @@ export function CatalogPage() {
       {visible.length === 0 ? (
         <EmptyState message="Aucun produit dans le catalogue." />
       ) : (
-        [...categories, { id: '__none', name: 'Sans catégorie', position: 999, created_at: '' }]
+        [
+          ...categories,
+          { id: '__none', name: 'Sans catégorie', position: 999, largeur_max: null, created_at: '' },
+        ]
           .filter((cat) => (grouped.get(cat.id)?.length ?? 0) > 0)
           .map((cat) => (
             <section key={cat.id} style={{ marginBottom: 26 }}>

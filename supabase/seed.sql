@@ -12,26 +12,33 @@ on conflict (id) do nothing;
 
 -- ---------------------------------------------------------------------------
 --  Catégories de produits
+--  largeur_max : surcharge la largeur maxi du type de confection pour les
+--  produits de cette catégorie (utile pour les stores — 2,50 m sur tenture).
 -- ---------------------------------------------------------------------------
-insert into product_categories (name, position) values
-  ('Voilage',    10),
-  ('Rideau',     20),
-  ('Tenture',    30),
-  ('Store',      40),
-  ('Accessoire', 50)
+insert into product_categories (name, position, largeur_max) values
+  ('Voilage',    10, null),
+  ('Rideau',     20, null),
+  ('Tenture',    30, 2.50),
+  ('Store',      40, null),
+  ('Ruflette',   45, null),
+  ('Accessoire', 50, null)
 on conflict (name) do nothing;
 
 -- ---------------------------------------------------------------------------
 --  Types de confection (modifiables par l'admin)
 --  m = largeur × facteur + marge_fixe
---  prix = (prix_tissu_au_metre + frais_selon_categorie) × m
+--  prix = (prix_tissu_au_metre + frais_selon_categorie_produit) × m
+--  frais : colonne rideau_voilage / tenture / store selon la catégorie du produit.
+--  ⚠ « Plis » : frais rideau/voilage et tenture À CONFIRMER (valeurs provisoires 4 / 5).
 -- ---------------------------------------------------------------------------
-insert into confection_types (nom, facteur, marge_fixe, frais_rideau_voilage, frais_tenture, position) values
-  ('Froncé',   2.0, 0.20,   4,   5, 10),
-  ('Plié',     3.0, 0.20,   4,   5, 20),
-  ('Wave 6cm', 2.8, 0.20,  10,  10, 30),
-  ('Wave 8cm', 2.2, 0.20,  10,  10, 40),
-  ('Store',    1.0, 0.20, 120, 120, 50);
+insert into confection_types
+  (nom, facteur, marge_fixe, frais_rideau_voilage, frais_tenture, frais_store, largeur_min, largeur_max, position) values
+  ('Froncé',   2.0, 0.20,  4,  5,   0, null, null, 10),
+  ('Plié',     3.0, 0.20,  4,  5,   0, null, null, 20),
+  ('Plis',     2.5, 0.20,  4,  5,   0, null, null, 30),
+  ('Wave 6cm', 2.8, 0.20, 10, 10,   0, null, null, 40),
+  ('Wave 8cm', 2.2, 0.20, 10, 10,   0, null, null, 50),
+  ('Store',    1.0, 0.20,  0,  0, 120, 0.50, 3.00, 60);
 
 -- ---------------------------------------------------------------------------
 --  Services facturables (modifiables par l'admin)
@@ -67,16 +74,34 @@ insert into email_templates (template_key, label, subject, body) values
 on conflict (template_key) do nothing;
 
 -- ---------------------------------------------------------------------------
---  Exemple de produits (à adapter / supprimer)
+--  Produits — tissus au mètre (avec confection sur mesure)
 -- ---------------------------------------------------------------------------
 insert into products (name, sku, category_id, price, unit, stock, low_stock_at, confection_category)
 select v.name, v.sku,
        (select id from product_categories where name = v.cat),
        v.price, v.unit::product_unit, v.stock, v.low, v.cc::confection_categ
 from (values
-  ('Voilage lin naturel',            'VOI-LIN-NAT', 'Voilage',    16.50, 'm',     42, 15, 'rideau_voilage'),
-  ('Rideau occultant gris ardoise',  'RID-OCC-GRI', 'Rideau',     34.00, 'm',     18, 10, 'rideau_voilage'),
-  ('Tenture velours bleu nuit',      'TEN-VEL-BLE', 'Tenture',    42.50, 'm',      9, 10, 'tenture'),
-  ('Toile pour store beige sable',   'STO-TOI-BEI', 'Store',      28.00, 'm',     25, 10, 'rideau_voilage'),
-  ('Tringle laiton extensible',      'ACC-TRI-LAI', 'Accessoire', 22.00, 'piece', 14,  6, null)
+  ('Voilage lin naturel',            'VOI-LIN-NAT', 'Voilage',  16.50, 'm', 42, 15, 'rideau_voilage'),
+  ('Rideau occultant gris ardoise',  'RID-OCC-GRI', 'Rideau',   34.00, 'm', 18, 10, 'rideau_voilage'),
+  ('Tenture velours bleu nuit',      'TEN-VEL-BLE', 'Tenture',  42.50, 'm',  9, 10, 'tenture'),
+  ('Toile pour store beige sable',   'STO-TOI-BEI', 'Store',    28.00, 'm', 25, 10, 'store')
 ) as v(name, sku, cat, price, unit, stock, low, cc);
+
+-- ---------------------------------------------------------------------------
+--  Produits — accessoires & ruflettes (prix simples, pas de confection)
+--  max_qty_per_line : au-delà, ajouter une 2e ligne du même produit.
+-- ---------------------------------------------------------------------------
+insert into products (name, sku, category_id, price, unit, stock, low_stock_at, max_qty_per_line)
+select v.name, v.sku,
+       (select id from product_categories where name = v.cat),
+       v.price, v.unit::product_unit, v.stock, v.low, v.maxq
+from (values
+  ('Rail aluminium ligne simple',        'ACC-RAIL-ALU', 'Accessoire', 10.00, 'm',          60, 12, 6.0),
+  ('Crochets',                           'ACC-CROCHET',  'Accessoire',  3.50, 'paquet_100', 40,  8, null),
+  ('Cavaliers (standard)',               'ACC-CAV-STD',  'Accessoire',  3.50, 'paquet_100', 40,  8, null),
+  ('Ruflette froncé automatique 3cm',    'RUF-FRO-3',    'Ruflette',    1.00, 'm',         200, 40, null),
+  ('Ruflette froncé automatique 8cm',    'RUF-FRO-8',    'Ruflette',    2.00, 'm',         200, 40, null),
+  ('Ruflette plié sans fils 3cm',        'RUF-PLI-3',    'Ruflette',    1.00, 'm',         200, 40, null),
+  ('Ruflette wave',                      'RUF-WAVE',     'Ruflette',    3.00, 'm',         150, 30, null),
+  ('Cavalier pour Wave',                 'RUF-CAV-WAVE', 'Ruflette',    4.00, 'm',         150, 30, null)
+) as v(name, sku, cat, price, unit, stock, low, maxq);

@@ -10,8 +10,8 @@
 --  Types énumérés
 -- ---------------------------------------------------------------------------
 create type user_role          as enum ('admin', 'travailleur');
-create type product_unit       as enum ('m', 'piece', 'kit');
-create type confection_categ   as enum ('rideau_voilage', 'tenture');
+create type product_unit       as enum ('m', 'piece', 'paquet_100', 'kit');
+create type confection_categ   as enum ('rideau_voilage', 'tenture', 'store');
 create type order_status        as enum ('recue', 'fabrication', 'pret', 'termine');
 create type order_fulfillment   as enum ('retrait', 'livraison');
 create type discount_kind       as enum ('none', 'montant', 'pourcent');
@@ -117,6 +117,9 @@ create table product_categories (
   id          uuid primary key default gen_random_uuid(),
   name        text not null unique,
   position    integer not null default 0,
+  -- largeur maximale (m) qui SURCHARGE celle du type de confection pour les
+  -- produits de cette catégorie (ex. tentures = 2,50 m pour les stores). NULL = pas de surcharge.
+  largeur_max numeric(8, 3),
   created_at  timestamptz not null default now()
 );
 
@@ -130,6 +133,10 @@ create table confection_types (
   marge_fixe           numeric(6, 3) not null default 0 check (marge_fixe >= 0),
   frais_rideau_voilage numeric(10, 2) not null default 0 check (frais_rideau_voilage >= 0),
   frais_tenture        numeric(10, 2) not null default 0 check (frais_tenture >= 0),
+  frais_store          numeric(10, 2) not null default 0 check (frais_store >= 0),
+  -- limites de largeur autorisées (m). NULL = pas de limite.
+  largeur_min          numeric(8, 3),
+  largeur_max          numeric(8, 3),
   active               boolean not null default true,
   position             integer not null default 0,
   created_at           timestamptz not null default now()
@@ -159,8 +166,12 @@ create table products (
   unit                product_unit not null default 'm',
   stock               numeric(10, 2) not null default 0,
   low_stock_at        numeric(10, 2) not null default 0,
-  -- catégorie de confection : détermine quelle colonne de frais s'applique.
-  -- NULL pour les articles non confectionnables (accessoires…).
+  -- quantité maximale sur une seule ligne de commande (ex. rail = 6 m).
+  -- NULL = pas de limite. Au-delà, l'utilisateur ajoute une 2e ligne.
+  max_qty_per_line    numeric(10, 3),
+  -- catégorie de confection : détermine quelle colonne de frais s'applique
+  -- (rideau_voilage → frais_rideau_voilage, tenture → frais_tenture, store → frais_store).
+  -- NULL pour les articles non confectionnables (accessoires, ruflettes…).
   confection_category confection_categ,
   photo_url           text not null default '',
   active              boolean not null default true,

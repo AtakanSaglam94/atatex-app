@@ -11,8 +11,6 @@ export function CategoriesPanel() {
   const { categories, products } = useData();
   const toast = useToast();
   const [name, setName] = useState('');
-  const [editId, setEditId] = useState<string | null>(null);
-  const [editName, setEditName] = useState('');
   const [deleting, setDeleting] = useState<ProductCategory | null>(null);
 
   async function add() {
@@ -25,17 +23,6 @@ export function CategoriesPanel() {
       toast.ok('Catégorie ajoutée.');
       setName('');
     }
-  }
-
-  async function saveEdit(id: string) {
-    if (!editName.trim()) return;
-    const { error } = await supabase
-      .from('product_categories')
-      .update({ name: editName.trim() })
-      .eq('id', id);
-    if (error) toast.error(error.message);
-    else toast.ok('Catégorie renommée.');
-    setEditId(null);
   }
 
   async function remove(c: ProductCategory) {
@@ -52,51 +39,22 @@ export function CategoriesPanel() {
   return (
     <>
       <Panel title="Catégories de produits">
+        <div style={{ padding: '10px 16px', fontSize: 12.5, color: 'var(--ink-soft)' }}>
+          « Largeur max » surcharge la largeur maximale du type de confection pour les produits de
+          cette catégorie (ex. tentures = 2,50 m pour les stores). Laisser vide sinon.
+        </div>
         <div className="table-wrap">
           <table>
+            <thead>
+              <tr>
+                <th>Nom</th>
+                <th style={{ width: 150 }}>Largeur max (m)</th>
+                <th />
+              </tr>
+            </thead>
             <tbody>
               {categories.map((c) => (
-                <tr key={c.id}>
-                  <td>
-                    {editId === c.id ? (
-                      <input
-                        autoFocus
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && saveEdit(c.id)}
-                      />
-                    ) : (
-                      c.name
-                    )}
-                  </td>
-                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                    {editId === c.id ? (
-                      <button className="btn btn--sm btn--primary" onClick={() => saveEdit(c.id)}>
-                        OK
-                      </button>
-                    ) : (
-                      <>
-                        <button
-                          className="btn btn--ghost btn--sm"
-                          onClick={() => {
-                            setEditId(c.id);
-                            setEditName(c.name);
-                          }}
-                          aria-label="Renommer"
-                        >
-                          <Icon name="edit" size={15} />
-                        </button>
-                        <button
-                          className="btn btn--ghost btn--sm"
-                          onClick={() => setDeleting(c)}
-                          aria-label="Supprimer"
-                        >
-                          <Icon name="trash" size={15} />
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
+                <CategoryRow key={c.id} category={c} onDelete={() => setDeleting(c)} />
               ))}
             </tbody>
           </table>
@@ -125,5 +83,56 @@ export function CategoriesPanel() {
         />
       )}
     </>
+  );
+}
+
+function CategoryRow({
+  category,
+  onDelete,
+}: {
+  category: ProductCategory;
+  onDelete: () => void;
+}) {
+  const toast = useToast();
+  const [name, setName] = useState(category.name);
+  const [max, setMax] = useState<string>(category.largeur_max?.toString() ?? '');
+  const dirty = name !== category.name || max !== (category.largeur_max?.toString() ?? '');
+
+  async function save() {
+    if (!name.trim()) return;
+    const { error } = await supabase
+      .from('product_categories')
+      .update({ name: name.trim(), largeur_max: max === '' ? null : parseFloat(max) || null })
+      .eq('id', category.id);
+    if (error) toast.error(error.message);
+    else toast.ok('Catégorie enregistrée.');
+  }
+
+  return (
+    <tr>
+      <td>
+        <input value={name} onChange={(e) => setName(e.target.value)} />
+      </td>
+      <td>
+        <input
+          type="number"
+          step="0.01"
+          min={0}
+          placeholder="—"
+          value={max}
+          onChange={(e) => setMax(e.target.value)}
+        />
+      </td>
+      <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+        {dirty && (
+          <button className="btn btn--sm btn--primary" onClick={save}>
+            OK
+          </button>
+        )}
+        <button className="btn btn--ghost btn--sm" onClick={onDelete} aria-label="Supprimer">
+          <Icon name="trash" size={15} />
+        </button>
+      </td>
+    </tr>
   );
 }

@@ -1,8 +1,8 @@
 // Types métier — reflètent le schéma Supabase (supabase/migrations/0001_init.sql)
 
 export type UserRole = 'admin' | 'travailleur';
-export type ProductUnit = 'm' | 'piece' | 'kit';
-export type ConfectionCategory = 'rideau_voilage' | 'tenture';
+export type ProductUnit = 'm' | 'piece' | 'paquet_100' | 'kit';
+export type ConfectionCategory = 'rideau_voilage' | 'tenture' | 'store';
 export type OrderStatus = 'recue' | 'fabrication' | 'pret' | 'termine';
 export type OrderFulfillment = 'retrait' | 'livraison';
 export type DiscountKind = 'none' | 'montant' | 'pourcent';
@@ -34,6 +34,8 @@ export interface ProductCategory {
   id: string;
   name: string;
   position: number;
+  /** surcharge de la largeur maxi du type de confection pour cette catégorie (m) */
+  largeur_max: number | null;
   created_at: string;
 }
 
@@ -44,6 +46,9 @@ export interface ConfectionType {
   marge_fixe: number;
   frais_rideau_voilage: number;
   frais_tenture: number;
+  frais_store: number;
+  largeur_min: number | null;
+  largeur_max: number | null;
   active: boolean;
   position: number;
   created_at: string;
@@ -67,6 +72,7 @@ export interface Product {
   unit: ProductUnit;
   stock: number;
   low_stock_at: number;
+  max_qty_per_line: number | null;
   confection_category: ConfectionCategory | null;
   photo_url: string;
   active: boolean;

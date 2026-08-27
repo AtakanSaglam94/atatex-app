@@ -401,6 +401,7 @@
           <select id="cat">
             <option value="rideau_voilage">Rideau / Voilage</option>
             <option value="tenture">Tenture</option>
+            <option value="store">Store</option>
           </select>
         </div>
       </div>
@@ -424,8 +425,10 @@
     <h2><span class="num">2</span> La formule</h2>
     <div class="formula">
       <b>m</b> (métrage à commander) = largeur × <b>facteur</b> + <b>marge fixe</b><br />
-      <b>frais</b> = catégorie « tenture » ? frais_tenture : frais_rideau_voilage<br />
-      <b>prix total</b> = ( prix_tissu_au_mètre + <b>frais</b> ) × <b>m</b>
+      <b>frais</b> = colonne rideau/voilage · tenture · store, selon la catégorie du produit<br />
+      <b>prix total</b> = ( prix_tissu_au_mètre + <b>frais</b> ) × <b>m</b><br />
+      <span style="color:var(--ink-faint)">Un store = même formule (facteur 1, frais store). Largeur bornée par min/max du type,
+      la largeur max de la catégorie de produit ayant priorité.</span>
     </div>
     <p style="font-size: 0.86rem; color: var(--ink-soft); margin: 1rem 0 0;">
       Le métrage est arrondi à 2 décimales, puis le prix total est calculé sur ce
@@ -445,8 +448,10 @@
             <th>Type</th>
             <th>Facteur</th>
             <th>Marge (m)</th>
-            <th>Frais rideau / voilage</th>
+            <th>Frais rid./voil.</th>
             <th>Frais tenture</th>
+            <th>Frais store</th>
+            <th>Largeur min / max</th>
           </tr>
         </thead>
         <tbody id="types-body"></tbody>
@@ -464,19 +469,23 @@
 <script>
   "use strict";
 
+  // catégorie du produit -> largeur max qui SURCHARGE celle du type (null = pas de surcharge)
+  var CATEGORY_LARGEUR_MAX = { rideau_voilage: null, tenture: 2.5, store: null };
+
   var CONFECTION_TYPES = [
-    { nom: "Froncé",   facteur: 2,   marge_fixe: 0.2, frais_rideau_voilage: 4,   frais_tenture: 5 },
-    { nom: "Plié",     facteur: 3,   marge_fixe: 0.2, frais_rideau_voilage: 4,   frais_tenture: 5 },
-    { nom: "Wave 6cm", facteur: 2.8, marge_fixe: 0.2, frais_rideau_voilage: 10,  frais_tenture: 10 },
-    { nom: "Wave 8cm", facteur: 2.2, marge_fixe: 0.2, frais_rideau_voilage: 10,  frais_tenture: 10 },
-    { nom: "Store",    facteur: 1,   marge_fixe: 0.2, frais_rideau_voilage: 120, frais_tenture: 120 }
+    { nom: "Froncé",   facteur: 2,   marge_fixe: 0.2, frais_rideau_voilage: 4,  frais_tenture: 5,  frais_store: 0,   largeur_min: null, largeur_max: null },
+    { nom: "Plié",     facteur: 3,   marge_fixe: 0.2, frais_rideau_voilage: 4,  frais_tenture: 5,  frais_store: 0,   largeur_min: null, largeur_max: null },
+    { nom: "Plis",     facteur: 2.5, marge_fixe: 0.2, frais_rideau_voilage: 4,  frais_tenture: 5,  frais_store: 0,   largeur_min: null, largeur_max: null },
+    { nom: "Wave 6cm", facteur: 2.8, marge_fixe: 0.2, frais_rideau_voilage: 10, frais_tenture: 10, frais_store: 0,   largeur_min: null, largeur_max: null },
+    { nom: "Wave 8cm", facteur: 2.2, marge_fixe: 0.2, frais_rideau_voilage: 10, frais_tenture: 10, frais_store: 0,   largeur_min: null, largeur_max: null },
+    { nom: "Store",    facteur: 1,   marge_fixe: 0.2, frais_rideau_voilage: 0,  frais_tenture: 0,  frais_store: 120, largeur_min: 0.5,  largeur_max: 3 }
   ];
 
   var EXAMPLES = [
     { label: "Froncé · 3,00 m · voilage à 18 €", largeur: 3, type: "Froncé", cat: "rideau_voilage", prix: 18 },
     { label: "Wave 8cm · 2,40 m · tenture à 32 €", largeur: 2.4, type: "Wave 8cm", cat: "tenture", prix: 32 },
-    { label: "Plié · 4,50 m · rideau à 24,50 €", largeur: 4.5, type: "Plié", cat: "rideau_voilage", prix: 24.5 },
-    { label: "Store · 1,20 m · store à 0 €", largeur: 1.2, type: "Store", cat: "rideau_voilage", prix: 0 }
+    { label: "Plis · 2,80 m · rideau à 24,50 €", largeur: 2.8, type: "Plis", cat: "rideau_voilage", prix: 24.5 },
+    { label: "Store · 1,20 m · store à 22 €", largeur: 1.2, type: "Store", cat: "store", prix: 22 }
   ];
 
   var round2 = function (n) { return Math.round((Number(n) || 0) * 100) / 100; };
@@ -488,7 +497,18 @@
   };
 
   function fraisPourCategorie(t, cat) {
-    return cat === "tenture" ? t.frais_tenture : t.frais_rideau_voilage;
+    if (cat === "tenture") return t.frais_tenture;
+    if (cat === "store") return t.frais_store;
+    return t.frais_rideau_voilage;
+  }
+
+  function validerLargeur(largeur, t, cat) {
+    var min = t.largeur_min;
+    var catMax = CATEGORY_LARGEUR_MAX[cat];
+    var max = (catMax != null) ? catMax : t.largeur_max;
+    if (min != null && largeur < min) return "Largeur en dessous du minimum (" + min + " m).";
+    if (max != null && largeur > max) return "Largeur au-dessus du maximum (" + max + " m) pour ce produit.";
+    return null;
   }
 
   function calculerConfection(largeur, prixTissu, cat, t) {
@@ -522,7 +542,10 @@
       "<td>" + num(t.facteur, 2) + "</td>" +
       "<td>" + num(t.marge_fixe, 2) + "</td>" +
       "<td>" + eur(t.frais_rideau_voilage) + " / m</td>" +
-      "<td>" + eur(t.frais_tenture) + " / m</td>";
+      "<td>" + eur(t.frais_tenture) + " / m</td>" +
+      "<td>" + eur(t.frais_store) + " / m</td>" +
+      "<td>" + (t.largeur_min != null ? t.largeur_min + " m" : "—") + " / " +
+        (t.largeur_max != null ? t.largeur_max + " m" : "—") + "</td>";
     tbody.appendChild(tr);
   });
 
@@ -542,7 +565,7 @@
     exWrap.appendChild(b);
   });
 
-  var CAT_LABELS = { rideau_voilage: "Rideau / Voilage", tenture: "Tenture" };
+  var CAT_LABELS = { rideau_voilage: "Rideau / Voilage", tenture: "Tenture", store: "Store" };
 
   function render() {
     var t = CONFECTION_TYPES.filter(function (x) { return x.nom === typeSel.value; })[0] || CONFECTION_TYPES[0];
@@ -555,6 +578,14 @@
       slip.innerHTML =
         '<div class="slip-head"><h2>Bon de coupe</h2><span class="tag">en attente</span></div>' +
         '<p class="err">Renseignez une largeur supérieure à 0 et un prix au mètre valide.</p>';
+      return;
+    }
+
+    var limitErr = validerLargeur(largeur, t, cat);
+    if (limitErr) {
+      slip.innerHTML =
+        '<div class="slip-head"><h2>Bon de coupe</h2><span class="tag">largeur invalide</span></div>' +
+        '<p class="err">' + limitErr + '</p>';
       return;
     }
 

@@ -24,7 +24,7 @@ interface Props {
 }
 
 export function OrderEditor({ existing, onClose, onSaved }: Props) {
-  const { clients, products, services, confectionTypes, company } = useData();
+  const { clients, products, services, confectionTypes, categories, company } = useData();
   const toast = useToast();
   const vatRate = company?.vat_rate ?? 21;
 
@@ -71,8 +71,8 @@ export function OrderEditor({ existing, onClose, onSaved }: Props) {
     setDraft((d) => ({ ...d, items: d.items.filter((it) => it.key !== key) }));
 
   const computed = useMemo(
-    () => draft.items.map((d) => ({ d, c: computeLine(d, products, confectionTypes) })),
-    [draft.items, products, confectionTypes],
+    () => draft.items.map((d) => ({ d, c: computeLine(d, products, confectionTypes, categories) })),
+    [draft.items, products, confectionTypes, categories],
   );
 
   const totals = useMemo(
@@ -93,7 +93,13 @@ export function OrderEditor({ existing, onClose, onSaved }: Props) {
   async function submit() {
     setBusy(true);
     setError(null);
-    const res = await saveOrder(draft, products, confectionTypes, existing?.status ?? null);
+    const res = await saveOrder(
+      draft,
+      products,
+      confectionTypes,
+      categories,
+      existing?.status ?? null,
+    );
     setBusy(false);
     if (!res.ok) {
       setError(res.error ?? 'Enregistrement impossible.');
@@ -348,9 +354,19 @@ function ProductLineRow({
   onChange: (patch: Partial<DraftItem>) => void;
   onRemove: () => void;
 }) {
-  const { products, confectionTypes } = useData();
+  const { products, confectionTypes, categories } = useData();
   const product = products.find((p) => p.id === draft.product_id) ?? null;
-  const canConfection = product?.unit === 'm';
+  const canConfection = product?.unit === 'm' && !!product?.confection_category;
+  const selectedType = confectionTypes.find((t) => t.id === draft.confection_type_id) ?? null;
+  const catMax = categories.find((c) => c.id === product?.category_id)?.largeur_max ?? null;
+  const effMin = selectedType?.largeur_min ?? null;
+  const effMax = catMax ?? selectedType?.largeur_max ?? null;
+  const limitsHint =
+    effMin != null || effMax != null
+      ? `Largeur autorisée : ${effMin != null ? `min ${effMin} m` : ''}${
+          effMin != null && effMax != null ? ' · ' : ''
+        }${effMax != null ? `max ${effMax} m` : ''}`
+      : null;
 
   return (
     <div
@@ -402,6 +418,10 @@ function ProductLineRow({
           <Icon name="x" size={16} />
         </button>
       </div>
+
+      {!draft.is_confection && computed.error && (
+        <div style={{ fontSize: 12, color: 'var(--danger)', marginTop: 6 }}>{computed.error}</div>
+      )}
 
       {canConfection && (
         <label
@@ -465,6 +485,11 @@ function ProductLineRow({
               <span style={{ color: 'var(--danger)' }}>{computed.error}</span>
             ) : (
               <span style={{ color: 'var(--thread)' }}>{computed.note}</span>
+            )}
+            {limitsHint && !computed.error && (
+              <span style={{ color: 'var(--ink-faint)', display: 'block', marginTop: 2 }}>
+                {limitsHint}
+              </span>
             )}
           </div>
         </div>
