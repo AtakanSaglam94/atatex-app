@@ -25,7 +25,6 @@ export type ConfectionRule = Pick<
   | 'marge_fixe'
   | 'frais_rideau_voilage'
   | 'frais_tenture'
-  | 'frais_store'
   | 'largeur_min'
   | 'largeur_max'
 >;
@@ -58,17 +57,10 @@ export const round2 = (n: number): number => Math.round((Number(n) || 0) * 100) 
 
 /** Frais de confection (€/m) applicable selon la catégorie du produit. */
 export function fraisPourCategorie(
-  type: Pick<ConfectionRule, 'frais_rideau_voilage' | 'frais_tenture' | 'frais_store'>,
+  type: Pick<ConfectionRule, 'frais_rideau_voilage' | 'frais_tenture'>,
   categorie: ConfectionCategory,
 ): number {
-  switch (categorie) {
-    case 'tenture':
-      return type.frais_tenture;
-    case 'store':
-      return type.frais_store;
-    default:
-      return type.frais_rideau_voilage;
-  }
+  return categorie === 'tenture' ? type.frais_tenture : type.frais_rideau_voilage;
 }
 
 export interface LargeurLimits {
@@ -126,16 +118,15 @@ export function calculerConfection(input: ConfectionInput): ConfectionResult {
  * À valider avec les exemples de test avant mise en production.
  */
 export const CONFECTION_TYPES_SEED: ConfectionRule[] = [
-  { nom: 'Froncé',   facteur: 2,   marge_fixe: 0.2, frais_rideau_voilage: 4,  frais_tenture: 5,  frais_store: 0,   largeur_min: null, largeur_max: null },
-  { nom: 'Plié',     facteur: 3,   marge_fixe: 0.2, frais_rideau_voilage: 4,  frais_tenture: 5,  frais_store: 0,   largeur_min: null, largeur_max: null },
-  { nom: 'Plis',     facteur: 2.5, marge_fixe: 0.2, frais_rideau_voilage: 4,  frais_tenture: 5,  frais_store: 0,   largeur_min: null, largeur_max: null },
-  { nom: 'Wave 6cm', facteur: 2.8, marge_fixe: 0.2, frais_rideau_voilage: 10, frais_tenture: 10, frais_store: 0,   largeur_min: null, largeur_max: null },
-  { nom: 'Wave 8cm', facteur: 2.2, marge_fixe: 0.2, frais_rideau_voilage: 10, frais_tenture: 10, frais_store: 0,   largeur_min: null, largeur_max: null },
-  { nom: 'Store',    facteur: 1,   marge_fixe: 0.2, frais_rideau_voilage: 0,  frais_tenture: 0,  frais_store: 120, largeur_min: 0.5,  largeur_max: 3 },
+  { nom: 'Froncé',   facteur: 2,   marge_fixe: 0.2, frais_rideau_voilage: 4,   frais_tenture: 5,   largeur_min: null, largeur_max: null },
+  { nom: 'Plié',     facteur: 3,   marge_fixe: 0.2, frais_rideau_voilage: 4,   frais_tenture: 5,   largeur_min: null, largeur_max: null },
+  { nom: 'Plis',     facteur: 2.5, marge_fixe: 0.2, frais_rideau_voilage: 4,   frais_tenture: 5,   largeur_min: null, largeur_max: null },
+  { nom: 'Wave 6cm', facteur: 2.8, marge_fixe: 0.2, frais_rideau_voilage: 10,  frais_tenture: 10,  largeur_min: null, largeur_max: null },
+  { nom: 'Wave 8cm', facteur: 2.2, marge_fixe: 0.2, frais_rideau_voilage: 10,  frais_tenture: 10,  largeur_min: null, largeur_max: null },
+  { nom: 'Store',    facteur: 1,   marge_fixe: 0,   frais_rideau_voilage: 120, frais_tenture: 120, largeur_min: 0.5,  largeur_max: 3 },
 ];
 
 export const CONFECTION_CATEGORY_LABELS: Record<ConfectionCategory, string> = {
   rideau_voilage: 'Rideau / Voilage',
   tenture: 'Tenture',
-  store: 'Store',
 };

@@ -22,7 +22,6 @@ export const UNIT_SHORT: Record<ProductUnit, string> = {
 export const CONFECTION_CATEGORY_LABEL: Record<ConfectionCategory, string> = {
   rideau_voilage: 'Rideau / Voilage',
   tenture: 'Tenture',
-  store: 'Store',
 };
 
 export const STATUS_LABEL: Record<OrderStatus, string> = {

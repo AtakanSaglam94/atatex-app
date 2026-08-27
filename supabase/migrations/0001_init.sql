@@ -11,7 +11,7 @@
 -- ---------------------------------------------------------------------------
 create type user_role          as enum ('admin', 'travailleur');
 create type product_unit       as enum ('m', 'piece', 'paquet_100', 'kit');
-create type confection_categ   as enum ('rideau_voilage', 'tenture', 'store');
+create type confection_categ   as enum ('rideau_voilage', 'tenture');
 create type order_status        as enum ('recue', 'fabrication', 'pret', 'termine');
 create type order_fulfillment   as enum ('retrait', 'livraison');
 create type discount_kind       as enum ('none', 'montant', 'pourcent');
@@ -133,7 +133,6 @@ create table confection_types (
   marge_fixe           numeric(6, 3) not null default 0 check (marge_fixe >= 0),
   frais_rideau_voilage numeric(10, 2) not null default 0 check (frais_rideau_voilage >= 0),
   frais_tenture        numeric(10, 2) not null default 0 check (frais_tenture >= 0),
-  frais_store          numeric(10, 2) not null default 0 check (frais_store >= 0),
   -- limites de largeur autorisées (m). NULL = pas de limite.
   largeur_min          numeric(8, 3),
   largeur_max          numeric(8, 3),
@@ -174,7 +173,7 @@ create table products (
   largeur_min         numeric(8, 3),
   largeur_max         numeric(8, 3),
   -- catégorie de confection : détermine quelle colonne de frais s'applique
-  -- (rideau_voilage → frais_rideau_voilage, tenture → frais_tenture, store → frais_store).
+  -- (rideau_voilage → frais_rideau_voilage, tenture → frais_tenture).
   -- NULL pour les articles non confectionnables (accessoires, ruflettes…).
   confection_category confection_categ,
   photo_url           text not null default '',

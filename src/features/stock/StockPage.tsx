@@ -136,7 +136,7 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
     largeur_min: product?.largeur_min ?? ('' as number | ''),
     largeur_max: product?.largeur_max ?? ('' as number | ''),
     confection_category:
-      product?.confection_category ?? ('' as '' | 'rideau_voilage' | 'tenture' | 'store'),
+      product?.confection_category ?? ('' as '' | 'rideau_voilage' | 'tenture'),
     photo_url: product?.photo_url ?? '',
     active: product?.active ?? true,
   }));
@@ -252,10 +252,10 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
             <option value="">Non confectionnable (rail, ruflette…)</option>
             <option value="rideau_voilage">{CONFECTION_CATEGORY_LABEL.rideau_voilage}</option>
             <option value="tenture">{CONFECTION_CATEGORY_LABEL.tenture}</option>
-            <option value="store">{CONFECTION_CATEGORY_LABEL.store}</option>
           </select>
           <div className="hint">
-            Détermine quels frais de confection s'appliquent (rideau/voilage, tenture ou store).
+            Détermine quels frais de confection s'appliquent. Pour un store, choisir
+            « rideau / voilage » ou « tenture » selon le type de toile.
           </div>
         </div>
       )}

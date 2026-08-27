@@ -2,7 +2,7 @@
 
 export type UserRole = 'admin' | 'travailleur';
 export type ProductUnit = 'm' | 'piece' | 'paquet_100' | 'kit';
-export type ConfectionCategory = 'rideau_voilage' | 'tenture' | 'store';
+export type ConfectionCategory = 'rideau_voilage' | 'tenture';
 export type OrderStatus = 'recue' | 'fabrication' | 'pret' | 'termine';
 export type OrderFulfillment = 'retrait' | 'livraison';
 export type DiscountKind = 'none' | 'montant' | 'pourcent';
@@ -46,7 +46,6 @@ export interface ConfectionType {
   marge_fixe: number;
   frais_rideau_voilage: number;
   frais_tenture: number;
-  frais_store: number;
   largeur_min: number | null;
   largeur_max: number | null;
   active: boolean;

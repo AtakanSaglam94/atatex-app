@@ -24,24 +24,23 @@ insert into product_categories (name, position, largeur_max) values
   ('Accessoire', 50, null)
 on conflict (name) do nothing;
 -- Limites de largeur : priorité produit > catégorie > type de confection.
--- Ex. store : type "Store" = min 0,50 / max 3,00 ; une toile de store destinée
--- aux tentures reçoit largeur_max = 2,50 sur SA fiche produit (voir plus bas).
+-- Ex. store : type "Store" = min 0,50 / max 3,00 (cas voilage) ; une toile de
+-- store destinée aux tentures reçoit largeur_max = 2,50 sur SA fiche produit.
 
 -- ---------------------------------------------------------------------------
 --  Types de confection (modifiables par l'admin)
 --  m = largeur × facteur + marge_fixe
 --  prix = (prix_tissu_au_metre + frais_selon_categorie_produit) × m
---  frais : colonne rideau_voilage / tenture / store selon la catégorie du produit.
---  ⚠ « Plis » : frais rideau/voilage et tenture À CONFIRMER (valeurs provisoires 4 / 5).
+--  frais : colonne rideau_voilage / tenture selon la catégorie du produit.
 -- ---------------------------------------------------------------------------
 insert into confection_types
-  (nom, facteur, marge_fixe, frais_rideau_voilage, frais_tenture, frais_store, largeur_min, largeur_max, position) values
-  ('Froncé',   2.0, 0.20,  4,  5,   0, null, null, 10),
-  ('Plié',     3.0, 0.20,  4,  5,   0, null, null, 20),
-  ('Plis',     2.5, 0.20,  4,  5,   0, null, null, 30),
-  ('Wave 6cm', 2.8, 0.20, 10, 10,   0, null, null, 40),
-  ('Wave 8cm', 2.2, 0.20, 10, 10,   0, null, null, 50),
-  ('Store',    1.0, 0.20,  0,  0, 120, 0.50, 3.00, 60);
+  (nom, facteur, marge_fixe, frais_rideau_voilage, frais_tenture, largeur_min, largeur_max, position) values
+  ('Froncé',   2.0, 0.20,   4,   5, null, null, 10),
+  ('Plié',     3.0, 0.20,   4,   5, null, null, 20),
+  ('Plis',     2.5, 0.20,   4,   5, null, null, 30),
+  ('Wave 6cm', 2.8, 0.20,  10,  10, null, null, 40),
+  ('Wave 8cm', 2.2, 0.20,  10,  10, null, null, 50),
+  ('Store',    1.0, 0.00, 120, 120, 0.50, 3.00, 60);
 
 -- ---------------------------------------------------------------------------
 --  Services facturables (modifiables par l'admin)
@@ -87,7 +86,7 @@ from (values
   ('Voilage lin naturel',            'VOI-LIN-NAT', 'Voilage',  16.50, 'm', 42, 15, 'rideau_voilage', null),
   ('Rideau occultant gris ardoise',  'RID-OCC-GRI', 'Rideau',   34.00, 'm', 18, 10, 'rideau_voilage', null),
   ('Tenture velours bleu nuit',      'TEN-VEL-BLE', 'Tenture',  42.50, 'm',  9, 10, 'tenture',        null),
-  ('Toile pour store beige sable',   'STO-TOI-BEI', 'Store',    28.00, 'm', 25, 10, 'store',          3.00)
+  ('Toile pour store beige sable',   'STO-TOI-BEI', 'Store',    28.00, 'm', 25, 10, 'rideau_voilage', 3.00)
 ) as v(name, sku, cat, price, unit, stock, low, cc, lmax);
 
 -- ---------------------------------------------------------------------------

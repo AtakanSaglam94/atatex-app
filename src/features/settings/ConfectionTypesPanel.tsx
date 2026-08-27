@@ -44,7 +44,6 @@ export function ConfectionTypesPanel() {
                 <th style={{ textAlign: 'right' }}>Marge (m)</th>
                 <th style={{ textAlign: 'right' }}>Frais rid./voil.</th>
                 <th style={{ textAlign: 'right' }}>Frais tenture</th>
-                <th style={{ textAlign: 'right' }}>Frais store</th>
                 <th style={{ textAlign: 'right' }}>Largeur min/max</th>
                 <th />
               </tr>
@@ -60,7 +59,6 @@ export function ConfectionTypesPanel() {
                   <td className="mono" style={{ textAlign: 'right' }}>{num(t.marge_fixe, 2, 3)}</td>
                   <td className="mono" style={{ textAlign: 'right' }}>{eur(t.frais_rideau_voilage)}/m</td>
                   <td className="mono" style={{ textAlign: 'right' }}>{eur(t.frais_tenture)}/m</td>
-                  <td className="mono" style={{ textAlign: 'right' }}>{eur(t.frais_store)}/m</td>
                   <td className="mono" style={{ textAlign: 'right' }}>
                     {t.largeur_min ?? '—'} / {t.largeur_max ?? '—'}
                   </td>
@@ -111,13 +109,12 @@ function ConfectionTypeEditor({ type, onClose }: { type: ConfectionType | null; 
     marge_fixe: type?.marge_fixe ?? 0.2,
     frais_rideau_voilage: type?.frais_rideau_voilage ?? 0,
     frais_tenture: type?.frais_tenture ?? 0,
-    frais_store: type?.frais_store ?? 0,
     largeur_min: (type?.largeur_min ?? '') as number | '',
     largeur_max: (type?.largeur_max ?? '') as number | '',
     active: type?.active ?? true,
   }));
   const [busy, setBusy] = useState(false);
-  const setNum = (k: 'facteur' | 'marge_fixe' | 'frais_rideau_voilage' | 'frais_tenture' | 'frais_store', v: string) =>
+  const setNum = (k: 'facteur' | 'marge_fixe' | 'frais_rideau_voilage' | 'frais_tenture', v: string) =>
     setF((s) => ({ ...s, [k]: parseFloat(v) || 0 }));
   const setLim = (k: 'largeur_min' | 'largeur_max', v: string) =>
     setF((s) => ({ ...s, [k]: v === '' ? '' : parseFloat(v) || 0 }));
@@ -132,7 +129,6 @@ function ConfectionTypeEditor({ type, onClose }: { type: ConfectionType | null; 
       marge_fixe: f.marge_fixe,
       frais_rideau_voilage: f.frais_rideau_voilage,
       frais_tenture: f.frais_tenture,
-      frais_store: f.frais_store,
       largeur_min: f.largeur_min === '' ? null : f.largeur_min,
       largeur_max: f.largeur_max === '' ? null : f.largeur_max,
       active: f.active,
@@ -175,18 +171,14 @@ function ConfectionTypeEditor({ type, onClose }: { type: ConfectionType | null; 
           <input type="number" step="0.01" min={0} value={f.marge_fixe} onChange={(e) => setNum('marge_fixe', e.target.value)} />
         </div>
       </div>
-      <div className="field-row field-row--3">
+      <div className="field-row">
         <div className="field">
-          <label>Frais — rideau / voilage (€/m)</label>
+          <label>Frais confection — rideau / voilage (€/m)</label>
           <input type="number" step="0.5" min={0} value={f.frais_rideau_voilage} onChange={(e) => setNum('frais_rideau_voilage', e.target.value)} />
         </div>
         <div className="field">
-          <label>Frais — tenture (€/m)</label>
+          <label>Frais confection — tenture (€/m)</label>
           <input type="number" step="0.5" min={0} value={f.frais_tenture} onChange={(e) => setNum('frais_tenture', e.target.value)} />
-        </div>
-        <div className="field">
-          <label>Frais — store (€/m)</label>
-          <input type="number" step="0.5" min={0} value={f.frais_store} onChange={(e) => setNum('frais_store', e.target.value)} />
         </div>
       </div>
       <div className="field-row">
