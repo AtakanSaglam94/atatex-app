@@ -3,7 +3,7 @@
 export type UserRole = 'admin' | 'travailleur';
 export type ProductUnit = 'm' | 'piece' | 'paquet_100' | 'kit';
 export type ConfectionCategory = 'rideau_voilage' | 'tenture';
-export type OrderStatus = 'recue' | 'fabrication' | 'pret' | 'termine';
+export type OrderStatus = 'recue' | 'fabrication' | 'pret' | 'termine' | 'annule';
 export type OrderFulfillment = 'retrait' | 'livraison';
 export type DiscountKind = 'none' | 'montant' | 'pourcent';
 export type OrderItemKind = 'produit' | 'service' | 'libre';
@@ -78,6 +78,7 @@ export interface Product {
   largeur_max: number | null;
   confection_category: ConfectionCategory | null;
   photo_url: string;
+  photo_urls: string[];
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -173,7 +174,8 @@ export type EmailTemplateKey =
   | 'fabrication'
   | 'pret_retrait'
   | 'pret_livraison'
-  | 'termine';
+  | 'termine'
+  | 'annule';
 
 export interface EmailTemplate {
   template_key: EmailTemplateKey;

@@ -237,6 +237,7 @@ export function OrderEditor({ existing, onClose, onSaved }: Props) {
               {s === 'termine' ? terminalStatusLabel(draft.fulfillment) : STATUS_LABEL[s]}
             </option>
           ))}
+          <option value="annule">Annulée</option>
         </select>
       </div>
 

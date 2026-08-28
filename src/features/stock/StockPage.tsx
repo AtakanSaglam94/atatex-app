@@ -8,6 +8,7 @@ import { useToast } from '@/lib/toast';
 import { supabase } from '@/lib/supabase';
 import { eur } from '@/lib/money';
 import { UNIT_LABEL, CONFECTION_CATEGORY_LABEL } from '@/lib/format';
+import { uploadProductPhoto, deleteProductPhoto, MAX_PHOTOS } from '@/lib/photos';
 import type { Product, ProductUnit } from '@/types';
 
 export function StockPage() {
@@ -138,10 +139,32 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
     largeur_max: product?.largeur_max ?? ('' as number | ''),
     confection_category:
       product?.confection_category ?? ('' as '' | 'rideau_voilage' | 'tenture'),
-    photo_url: product?.photo_url ?? '',
     active: product?.active ?? true,
   }));
+  const [photos, setPhotos] = useState<string[]>(() => product?.photo_urls ?? []);
   const [busy, setBusy] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  async function addPhotos(list: FileList | null) {
+    if (!list || list.length === 0) return;
+    const files = Array.from(list).slice(0, MAX_PHOTOS - photos.length);
+    setUploading(true);
+    try {
+      for (const file of files) {
+        const url = await uploadProductPhoto(file, f.name || 'produit');
+        setPhotos((p) => [...p, url]);
+      }
+    } catch (e) {
+      toast.error(`Envoi de la photo impossible : ${(e as Error).message ?? e}`);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function removePhoto(url: string) {
+    setPhotos((p) => p.filter((u) => u !== url));
+    void deleteProductPhoto(url);
+  }
 
   async function save() {
     if (!f.name.trim()) return toast.error('Le nom est obligatoire.');
@@ -159,7 +182,8 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
       largeur_min: f.largeur_min === '' ? null : Number(f.largeur_min) || null,
       largeur_max: f.largeur_max === '' ? null : Number(f.largeur_max) || null,
       confection_category: f.unit === 'm' && f.confection_category ? f.confection_category : null,
-      photo_url: f.photo_url.trim(),
+      photo_urls: photos,
+      photo_url: photos[0] ?? '',
       active: f.active,
     };
     const { error } = product
@@ -324,13 +348,103 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
         </div>
       </div>
       <div className="field">
-        <label>Photo (URL)</label>
-        <input
-          value={f.photo_url}
-          onChange={(e) => setF({ ...f, photo_url: e.target.value })}
-          placeholder="https://…"
-        />
-        <div className="hint">Vignette affichée dans le catalogue (vue tablette).</div>
+        <label>Photos ({photos.length}/{MAX_PHOTOS})</label>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {photos.map((url, i) => (
+            <div
+              key={url}
+              style={{
+                position: 'relative',
+                width: 82,
+                height: 82,
+                borderRadius: 6,
+                overflow: 'hidden',
+                border: i === 0 ? '2px solid var(--accent)' : '1px solid var(--line-strong)',
+              }}
+            >
+              <img
+                src={url}
+                alt=""
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+              <button
+                type="button"
+                onClick={() => removePhoto(url)}
+                aria-label="Retirer la photo"
+                style={{
+                  position: 'absolute',
+                  top: 2,
+                  right: 2,
+                  width: 20,
+                  height: 20,
+                  borderRadius: 999,
+                  border: 'none',
+                  background: 'rgba(20,16,12,0.65)',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <Icon name="x" size={13} />
+              </button>
+              {i !== 0 && (
+                <button
+                  type="button"
+                  onClick={() => setPhotos((p) => [url, ...p.filter((u) => u !== url)])}
+                  title="Définir comme photo principale"
+                  style={{
+                    position: 'absolute',
+                    bottom: 2,
+                    left: 2,
+                    fontSize: 10,
+                    padding: '1px 5px',
+                    borderRadius: 4,
+                    border: 'none',
+                    background: 'rgba(20,16,12,0.65)',
+                    color: '#fff',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Principale
+                </button>
+              )}
+            </div>
+          ))}
+          {photos.length < MAX_PHOTOS && (
+            <label
+              style={{
+                width: 82,
+                height: 82,
+                borderRadius: 6,
+                border: '1px dashed var(--line-strong)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 4,
+                cursor: uploading ? 'wait' : 'pointer',
+                color: 'var(--ink-soft)',
+                fontSize: 11,
+              }}
+            >
+              <Icon name="plus" size={16} />
+              {uploading ? '…' : 'Ajouter'}
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                hidden
+                disabled={uploading}
+                onChange={(e) => addPhotos(e.target.files)}
+              />
+            </label>
+          )}
+        </div>
+        <div className="hint">
+          La 1ʳᵉ photo (bordure) sert de vignette au catalogue. JPEG / PNG / WebP, 5 Mo max.
+        </div>
       </div>
     </Modal>
   );

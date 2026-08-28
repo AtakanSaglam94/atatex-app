@@ -14,6 +14,8 @@ export function emailTemplateKeyFor(
       return fulfillment === 'livraison' ? 'pret_livraison' : 'pret_retrait';
     case 'termine':
       return 'termine';
+    case 'annule':
+      return 'annule';
     default:
       return null;
   }

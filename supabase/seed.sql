@@ -72,7 +72,11 @@ insert into email_templates (template_key, label, subject, body) values
 
   ('termine', 'Livré / Finalisé',
    'Votre commande {numero} — merci !',
-   E'Bonjour {client},\n\nVotre commande {numero} vous a bien été remise. Nous espérons qu''elle vous donnera entière satisfaction.\nUn grand merci pour votre confiance, et à bientôt chez {entreprise}.\n')
+   E'Bonjour {client},\n\nVotre commande {numero} vous a bien été remise. Nous espérons qu''elle vous donnera entière satisfaction.\nUn grand merci pour votre confiance, et à bientôt chez {entreprise}.\n'),
+
+  ('annule', 'Commande annulée',
+   'Votre commande {numero} a été annulée',
+   E'Bonjour {client},\n\nVotre commande {numero} a été annulée. Si vous avez déjà versé un acompte, il vous sera remboursé — nous vous recontactons à ce sujet.\nPour toute question, répondez simplement à cet email.\n\nCordialement,\n{entreprise}')
 on conflict (template_key) do nothing;
 
 -- ---------------------------------------------------------------------------

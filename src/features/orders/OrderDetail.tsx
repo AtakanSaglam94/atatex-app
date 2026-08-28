@@ -13,6 +13,7 @@ import {
   STATUS_LABEL,
   terminalStatusLabel,
   fulfillmentText,
+  isCancelled,
 } from '@/lib/format';
 import { generateUBL, downloadFile } from '@/lib/ubl';
 import { buildInvoicePdf } from '@/lib/invoice-pdf';
@@ -133,18 +134,49 @@ export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
       </div>
 
       {/* progression de statut */}
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
-        {STATUS_ORDER.map((s) => (
-          <button
-            key={s}
-            className={'btn btn--sm' + (order.status === s ? ' btn--primary' : '')}
-            disabled={busy || order.status === s}
-            onClick={() => changeStatus(s)}
-          >
-            {s === 'termine' ? terminalStatusLabel(order.fulfillment) : STATUS_LABEL[s]}
+      {isCancelled(order.status) ? (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: '10px 12px',
+            background: 'var(--danger-weak)',
+            color: 'var(--danger)',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: 13,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 10,
+            flexWrap: 'wrap',
+          }}
+        >
+          Commande annulée — exclue du chiffre d'affaires et des statistiques.
+          <button className="btn btn--sm" disabled={busy} onClick={() => changeStatus('recue')}>
+            Réactiver
           </button>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
+          {STATUS_ORDER.map((s) => (
+            <button
+              key={s}
+              className={'btn btn--sm' + (order.status === s ? ' btn--primary' : '')}
+              disabled={busy || order.status === s}
+              onClick={() => changeStatus(s)}
+            >
+              {s === 'termine' ? terminalStatusLabel(order.fulfillment) : STATUS_LABEL[s]}
+            </button>
+          ))}
+          <button
+            className="btn btn--sm btn--danger"
+            disabled={busy}
+            onClick={() => changeStatus('annule')}
+            style={{ marginLeft: 'auto' }}
+          >
+            Annuler la commande
+          </button>
+        </div>
+      )}
 
       <div className="table-wrap">
         <table>

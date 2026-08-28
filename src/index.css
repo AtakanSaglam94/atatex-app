@@ -274,6 +274,11 @@ textarea {
   background: var(--ok-weak);
   color: var(--ok);
 }
+.badge--annule {
+  background: var(--surface-sunken);
+  color: var(--ink-faint);
+  text-decoration: line-through;
+}
 .badge--paid {
   background: var(--ok-weak);
   color: var(--ok);

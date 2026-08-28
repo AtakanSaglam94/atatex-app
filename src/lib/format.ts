@@ -31,7 +31,10 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
   fabrication: 'En fabrication',
   pret: 'Prêt',
   termine: 'Terminé',
+  annule: 'Annulée',
 };
+
+export const isCancelled = (s: OrderStatus): boolean => s === 'annule';
 
 /** Libellé du dernier statut selon le mode (retrait → « Finalisé », livraison → « Livré »). */
 export function terminalStatusLabel(fulfillment: OrderFulfillment): string {
@@ -44,6 +47,7 @@ export function statusLabel(status: OrderStatus, fulfillment: OrderFulfillment):
   return STATUS_LABEL[status];
 }
 
+/** Étapes linéaires du parcours (l'annulation est gérée à part). */
 export const STATUS_ORDER: OrderStatus[] = ['recue', 'fabrication', 'pret', 'termine'];
 
 export function nextStatus(status: OrderStatus): OrderStatus | null {

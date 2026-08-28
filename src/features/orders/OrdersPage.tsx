@@ -23,7 +23,7 @@ export function OrdersPage() {
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return orders.filter((o) => {
-      if (statusFilter !== 'all' && o.status !== statusFilter) return false;
+      if (statusFilter === 'all' ? o.status === 'annule' : o.status !== statusFilter) return false;
       if (!q) return true;
       return (
         o.order_number.toLowerCase().includes(q) ||
@@ -64,7 +64,7 @@ export function OrdersPage() {
             >
               Toutes
             </button>
-            {STATUS_ORDER.map((s) => (
+            {[...STATUS_ORDER, 'annule' as const].map((s) => (
               <button
                 key={s}
                 className={'btn btn--sm' + (statusFilter === s ? ' btn--primary' : '')}

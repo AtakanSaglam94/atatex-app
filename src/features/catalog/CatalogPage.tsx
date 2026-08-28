@@ -1,9 +1,44 @@
 import { useMemo, useState } from 'react';
 import { PageHeader, SearchInput, EmptyState } from '@/components/ui';
 import { Icon } from '@/components/Icon';
+import { Modal } from '@/components/Modal';
 import { useData } from '@/data/DataProvider';
 import { eur } from '@/lib/money';
 import { UNIT_LABEL, CONFECTION_CATEGORY_LABEL } from '@/lib/format';
+import type { Product } from '@/types';
+
+function photosOf(p: Product): string[] {
+  return p.photo_urls?.length ? p.photo_urls : p.photo_url ? [p.photo_url] : [];
+}
+
+function Gallery({ product, onClose }: { product: Product; onClose: () => void }) {
+  const photos = photosOf(product);
+  const [i, setI] = useState(0);
+  return (
+    <Modal title={product.name} onClose={onClose}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+        <img
+          src={photos[i]}
+          alt={product.name}
+          style={{ maxWidth: '100%', maxHeight: '60vh', borderRadius: 8 }}
+        />
+        {photos.length > 1 && (
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button className="btn btn--sm" onClick={() => setI((i + photos.length - 1) % photos.length)}>
+              ‹
+            </button>
+            <span className="mono" style={{ fontSize: 13 }}>
+              {i + 1} / {photos.length}
+            </span>
+            <button className="btn btn--sm" onClick={() => setI((i + 1) % photos.length)}>
+              ›
+            </button>
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+}
 
 /**
  * Vue catalogue — pensée pour la tablette en boutique / au marché :
@@ -13,6 +48,7 @@ export function CatalogPage() {
   const { products, categories } = useData();
   const [search, setSearch] = useState('');
   const [activeCat, setActiveCat] = useState<string | 'all'>('all');
+  const [gallery, setGallery] = useState<Product | null>(null);
 
   const visible = useMemo(() => {
     const q = search.toLowerCase().trim();
@@ -76,24 +112,49 @@ export function CatalogPage() {
                   gap: 12,
                 }}
               >
-                {grouped.get(cat.id)!.map((p) => (
+                {grouped.get(cat.id)!.map((p) => {
+                  const pics = photosOf(p);
+                  return (
                   <div key={p.id} className="card" style={{ padding: 12 }}>
-                    <div
+                    <button
+                      type="button"
+                      onClick={() => pics.length && setGallery(p)}
                       style={{
+                        position: 'relative',
                         height: 110,
+                        width: '100%',
                         borderRadius: 6,
                         marginBottom: 10,
-                        background: p.photo_url
-                          ? `center/cover no-repeat url(${p.photo_url})`
+                        border: 'none',
+                        padding: 0,
+                        background: pics[0]
+                          ? `center/cover no-repeat url(${pics[0]})`
                           : 'var(--accent-weak)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: 'var(--accent)',
+                        cursor: pics.length ? 'zoom-in' : 'default',
                       }}
                     >
-                      {!p.photo_url && <Icon name="catalog" size={26} />}
-                    </div>
+                      {!pics.length && <Icon name="catalog" size={26} />}
+                      {pics.length > 1 && (
+                        <span
+                          style={{
+                            position: 'absolute',
+                            bottom: 4,
+                            right: 4,
+                            background: 'rgba(20,16,12,0.7)',
+                            color: '#fff',
+                            fontSize: 10,
+                            padding: '1px 6px',
+                            borderRadius: 999,
+                          }}
+                        >
+                          {pics.length} photos
+                        </span>
+                      )}
+                    </button>
                     <div style={{ fontWeight: 600, fontSize: 14 }}>{p.name}</div>
                     {p.confection_category && (
                       <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>
@@ -111,11 +172,14 @@ export function CatalogPage() {
                       </span>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           ))
       )}
+
+      {gallery && <Gallery product={gallery} onClose={() => setGallery(null)} />}
     </>
   );
 }
