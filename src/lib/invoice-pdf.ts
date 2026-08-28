@@ -1,6 +1,6 @@
 import pdfMake from 'pdfmake/build/pdfmake';
 import * as pdfFonts from 'pdfmake/build/vfs_fonts';
-import type { TDocumentDefinitions, CustomTableLayout } from 'pdfmake/interfaces';
+import type { TDocumentDefinitions, CustomTableLayout, TableCell } from 'pdfmake/interfaces';
 import type { Company, OrderWithRelations } from '@/types';
 import type { OrderTotals } from './order-totals';
 import { eur, num } from './money';
@@ -32,15 +32,20 @@ interface InvoiceInput {
 export function buildInvoicePdf({ order, company, totals, invoiceNumber }: InvoiceInput) {
   const client = order.client;
 
-  const itemRows = order.items.map((it) => [
+  const headerRow: TableCell[] = [
+    { text: 'Désignation', style: 'th' },
+    { text: 'Qté', style: 'th', alignment: 'right' },
+    { text: 'P.U.', style: 'th', alignment: 'right' },
+    { text: 'Montant', style: 'th', alignment: 'right' },
+  ];
+
+  const itemRows: TableCell[][] = order.items.map((it) => [
     {
       text: [
         { text: it.label + '\n', bold: true },
         it.is_confection
           ? {
-              text: `Largeur ${num(it.largeur ?? 0, 0, 2)} m · ${num(it.metrage ?? 0, 0, 2)} m de tissu · confection ${eur(
-                it.frais_confection ?? 0,
-              )}/m`,
+              text: `Largeur ${num(it.largeur ?? 0, 0, 2)} m · ${num(it.metrage ?? 0, 0, 2)} m de tissu · confection ${eur(it.frais_confection ?? 0)}/m`,
               fontSize: 8,
               color: SOFT,
             }
@@ -114,15 +119,7 @@ export function buildInvoicePdf({ order, company, totals, invoiceNumber }: Invoi
         table: {
           headerRows: 1,
           widths: ['*', 'auto', 'auto', 'auto'],
-          body: [
-            [
-              { text: 'Désignation', style: 'th' },
-              { text: 'Qté', style: 'th', alignment: 'right' },
-              { text: 'P.U.', style: 'th', alignment: 'right' },
-              { text: 'Montant', style: 'th', alignment: 'right' },
-            ],
-            ...itemRows,
-          ],
+          body: [headerRow, ...itemRows],
         },
         layout: {
           hLineWidth: (i, node) =>
@@ -141,20 +138,13 @@ export function buildInvoicePdf({ order, company, totals, invoiceNumber }: Invoi
           {
             width: 'auto',
             table: {
-              body: totalsRows.map(([k, v], i) => [
-                {
-                  text: k,
-                  alignment: 'right',
-                  bold: i === totalsRows.length - 1 || k === 'Total TTC',
-                  color: SOFT,
-                },
-                {
-                  text: v,
-                  alignment: 'right',
-                  bold: i === totalsRows.length - 1 || k === 'Total TTC',
-                  color: k === 'Total TTC' ? COGNAC : INK,
-                },
-              ]),
+              body: totalsRows.map(([k, v], i): TableCell[] => {
+                const strong = i === totalsRows.length - 1 || k === 'Total TTC';
+                return [
+                  { text: k, alignment: 'right', bold: strong, color: SOFT },
+                  { text: v, alignment: 'right', bold: strong, color: k === 'Total TTC' ? COGNAC : INK },
+                ];
+              }),
             },
             layout: 'noBorders',
           },

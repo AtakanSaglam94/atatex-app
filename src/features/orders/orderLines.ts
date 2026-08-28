@@ -2,10 +2,12 @@ import { calculerConfection, largeurLimits, validerLargeur } from '@/lib/confect
 import { round2 } from '@/lib/money';
 import { UNIT_LABEL } from '@/lib/format';
 import type {
+  ConfectionCategory,
   ConfectionType,
   OrderItem,
   Product,
   ProductCategory,
+  ProductUnit,
   Service,
 } from '@/types';
 
@@ -13,7 +15,7 @@ export interface DraftItem {
   key: string;
   kind: 'produit' | 'service' | 'libre';
   label: string;
-  unit: 'm' | 'piece' | 'kit' | null;
+  unit: ProductUnit | null;
   qty: number;
   unit_price: number;
   product_id: string | null;
@@ -92,14 +94,14 @@ export function draftFromOrderItem(it: OrderItem): DraftItem {
 
 export interface ComputedLine {
   label: string;
-  unit: 'm' | 'piece' | 'kit' | null;
+  unit: ProductUnit | null;
   qty: number;
   unit_price: number;
   line_total: number;
   is_confection: boolean;
   confection_type_id: string | null;
   confection_type_label: string;
-  confection_category: 'rideau_voilage' | 'tenture' | null;
+  confection_category: ConfectionCategory | null;
   largeur: number | null;
   facteur: number | null;
   marge_fixe: number | null;
@@ -187,7 +189,7 @@ export function computeLine(
   if (largeurError) return { ...base, largeur: d.largeur, error: largeurError };
 
   const r = calculerConfection({
-    largeur: d.largeur,
+    largeur: d.largeur ?? 0,
     prixTissuAuMetre: product.price,
     categorie: product.confection_category,
     type,
