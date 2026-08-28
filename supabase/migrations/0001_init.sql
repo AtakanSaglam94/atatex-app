@@ -343,14 +343,18 @@ create policy "profiles: l'utilisateur modifie sa fiche" on profiles
 create policy "profiles: admin gère tout" on profiles
   for all to authenticated using (is_admin()) with check (is_admin());
 
--- Empêche un travailleur de modifier son propre rôle ou son statut actif
+-- Empêche un travailleur connecté de modifier son propre rôle ou son statut actif.
+-- Ne s'applique qu'aux requêtes d'un utilisateur authentifié (auth.uid() non nul) ;
+-- les opérations directes en base (SQL Editor, service role) restent permises —
+-- nécessaire pour promouvoir le tout premier administrateur.
 create function guard_profile_changes()
 returns trigger
 language plpgsql
 security definer set search_path = public
 as $$
 begin
-  if not is_admin() and (new.role is distinct from old.role or new.active is distinct from old.active) then
+  if auth.uid() is not null and not is_admin()
+     and (new.role is distinct from old.role or new.active is distinct from old.active) then
     raise exception 'Seul un administrateur peut modifier le rôle ou le statut d''un compte';
   end if;
   return new;
