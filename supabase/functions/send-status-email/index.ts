@@ -1,11 +1,13 @@
 // ============================================================================
 //  Edge Function : envoi d'un email au client à chaque changement de statut
 // ============================================================================
-//  Déploiement :
-//    supabase functions deploy send-status-email --no-verify-jwt
-//  Secrets à définir (Supabase → Edge Functions → Manage secrets) :
+//  Déploiement : via le Dashboard Supabase (Edge Functions → Deploy a new
+//  function) ou `supabase functions deploy send-status-email`.
+//  Appelée par l'app avec la session de l'utilisateur → laisser la
+//  vérification JWT activée (réglage par défaut).
+//  Secrets à définir (Supabase → Edge Functions → Secrets) :
 //    RESEND_API_KEY = re_...
-//    EMAIL_FROM     = "ATA-TEX <commande@ton-domaine.be>"
+//    EMAIL_FROM     = "ATA-TEX <commande@ata-tex.be>"
 //    SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY sont fournis automatiquement.
 // ============================================================================
 
