@@ -63,7 +63,10 @@ export async function buildInvoicePdf({ order, company, totals, invoiceNumber }:
         { text: it.label + '\n', bold: true },
         it.is_confection
           ? {
-              text: `Largeur ${num(it.largeur ?? 0, 0, 2)} m · ${num(it.metrage ?? 0, 0, 2)} m de tissu · confection ${eur(it.frais_confection ?? 0)}/m`,
+              text:
+                `Largeur ${num(it.largeur ?? 0, 0, 2)} m` +
+                (it.hauteur ? ` × hauteur ${num(it.hauteur, 0, 2)} m` : '') +
+                ` · ${num(it.metrage ?? 0, 0, 2)} m de tissu · confection ${eur(it.frais_confection ?? 0)}/m`,
               fontSize: 8,
               color: SOFT,
             }
@@ -129,7 +132,13 @@ export async function buildInvoicePdf({ order, company, totals, invoiceNumber }:
         characterSpacing: 0.5,
       },
       { text: client?.name || 'Client', bold: true },
-      client?.address ? { text: client.address, color: SOFT } : '',
+      client?.address_line ? { text: client.address_line, color: SOFT } : '',
+      client && (client.postal_code || client.city)
+        ? { text: `${client.postal_code} ${client.city}`.trim(), color: SOFT }
+        : client?.address
+          ? { text: client.address, color: SOFT }
+          : '',
+      client?.country && client.country !== 'BE' ? { text: client.country, color: SOFT } : '',
       client?.vat ? { text: 'TVA : ' + client.vat, color: SOFT } : '',
 
       {

@@ -51,7 +51,7 @@ insert into services (name, price, position) values
   ('Pose à domicile',   60, 30);
 
 -- ---------------------------------------------------------------------------
---  Modèles d'emails (variables disponibles : {client}, {numero}, {entreprise})
+--  Modèles d'emails (variables : {client}, {numero}, {entreprise}, {point}, {jour})
 -- ---------------------------------------------------------------------------
 insert into email_templates (template_key, label, subject, body) values
   ('recue', 'Commande reçue',
@@ -64,7 +64,7 @@ insert into email_templates (template_key, label, subject, body) values
 
   ('pret_retrait', 'Prêt — retrait',
    'Votre commande {numero} est prête à être retirée',
-   E'Bonjour {client},\n\nVotre commande {numero} est prête. Vous pouvez venir la retirer à la boutique ou sur le marché.\nN''hésitez pas à nous contacter pour convenir d''un moment.\n\nÀ très bientôt,\n{entreprise}'),
+   E'Bonjour {client},\n\nVotre commande {numero} est prête. Vous pouvez venir la retirer : {point} {jour}.\nN''hésitez pas à nous contacter pour convenir d''un moment.\n\nÀ très bientôt,\n{entreprise}'),
 
   ('pret_livraison', 'Prêt — livraison',
    'Votre commande {numero} est prête, livraison à venir',

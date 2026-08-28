@@ -7,6 +7,7 @@ export type OrderStatus = 'recue' | 'fabrication' | 'pret' | 'termine';
 export type OrderFulfillment = 'retrait' | 'livraison';
 export type DiscountKind = 'none' | 'montant' | 'pourcent';
 export type OrderItemKind = 'produit' | 'service' | 'libre';
+export type ClientType = 'particulier' | 'professionnel';
 
 export interface Profile {
   id: string;
@@ -68,6 +69,7 @@ export interface Product {
   sku: string;
   category_id: string | null;
   price: number;
+  cost_price: number;
   unit: ProductUnit;
   stock: number;
   low_stock_at: number;
@@ -83,12 +85,32 @@ export interface Product {
 
 export interface Client {
   id: string;
+  /** libellé complet calculé (compat affichage / factures) */
   name: string;
+  client_type: ClientType;
+  first_name: string;
+  last_name: string;
+  company_name: string;
   email: string;
   phone: string;
+  /** adresse libre (compat) — l'app la garde synchro avec les champs structurés */
   address: string;
+  address_line: string;
+  postal_code: string;
+  city: string;
+  country: string;
   vat: string;
   notes: string;
+  created_at: string;
+}
+
+export interface PickupPoint {
+  id: string;
+  name: string;
+  day: string;
+  address: string;
+  position: number;
+  active: boolean;
   created_at: string;
 }
 
@@ -109,6 +131,7 @@ export interface OrderItem {
   confection_type_label: string;
   confection_category: ConfectionCategory | null;
   largeur: number | null;
+  hauteur: number | null;
   facteur: number | null;
   marge_fixe: number | null;
   frais_confection: number | null;
@@ -123,6 +146,8 @@ export interface Order {
   order_date: string;
   status: OrderStatus;
   fulfillment: OrderFulfillment;
+  pickup_point_id: string | null;
+  bank_transfer: boolean;
   discount_type: DiscountKind;
   discount_value: number;
   round_total: boolean;
@@ -130,6 +155,9 @@ export interface Order {
   notes: string;
   invoice_number: string | null;
   invoiced_at: string | null;
+  fabrication_at: string | null;
+  ready_at: string | null;
+  completed_at: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;

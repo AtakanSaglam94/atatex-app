@@ -6,7 +6,14 @@ import { useToast } from '@/lib/toast';
 import { supabase } from '@/lib/supabase';
 import { eur, num } from '@/lib/money';
 import { computeOrderTotals } from '@/lib/order-totals';
-import { fmtDate, statusLabel, STATUS_ORDER, STATUS_LABEL, terminalStatusLabel } from '@/lib/format';
+import {
+  fmtDate,
+  statusLabel,
+  STATUS_ORDER,
+  STATUS_LABEL,
+  terminalStatusLabel,
+  fulfillmentText,
+} from '@/lib/format';
 import { generateUBL, downloadFile } from '@/lib/ubl';
 import { buildInvoicePdf } from '@/lib/invoice-pdf';
 import { assignInvoiceNumber } from './invoiceNumber';
@@ -21,7 +28,8 @@ interface Props {
 }
 
 export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
-  const { company } = useData();
+  const { company, pickupPoints } = useData();
+  const pickupPoint = pickupPoints.find((p) => p.id === order.pickup_point_id) ?? null;
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const vatRate = company?.vat_rate ?? 21;
@@ -111,12 +119,17 @@ export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
           {statusLabel(order.status, order.fulfillment)}
         </span>
         <span className={`badge badge--${paymentBadge}`}>{paymentLabel}</span>
+        {order.bank_transfer && totals.balanceDue > 0 && (
+          <span className="badge badge--unpaid">Virement à vérifier</span>
+        )}
         {order.invoice_number && <span className="badge badge--neutral">{order.invoice_number}</span>}
       </div>
 
       <div style={{ color: 'var(--ink-soft)', fontSize: 13.5, marginBottom: 14 }}>
         {order.client?.name ?? 'Client supprimé'} · {fmtDate(order.order_date)}
         {order.client?.phone ? ` · ${order.client.phone}` : ''}
+        <br />
+        {fulfillmentText(order.fulfillment, pickupPoint)}
       </div>
 
       {/* progression de statut */}
@@ -142,7 +155,8 @@ export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
                   {it.label}
                   {it.is_confection && (
                     <div style={{ fontSize: 12, color: 'var(--ink-faint)' }}>
-                      Largeur {num(it.largeur ?? 0, 0, 2)} m → {num(it.metrage ?? 0, 0, 2)} m à
+                      Largeur {num(it.largeur ?? 0, 0, 2)} m
+                      {it.hauteur ? ` × hauteur ${num(it.hauteur, 0, 2)} m` : ''} → {num(it.metrage ?? 0, 0, 2)} m à
                       commander · frais {eur(it.frais_confection ?? 0)}/m
                     </div>
                   )}

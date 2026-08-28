@@ -16,6 +16,8 @@ export interface OrderDraft {
   order_date: string;
   status: OrderStatus;
   fulfillment: OrderFulfillment;
+  pickup_point_id: string | null;
+  bank_transfer: boolean;
   discount_type: DiscountKind;
   discount_value: number;
   round_total: boolean;
@@ -57,6 +59,8 @@ export async function saveOrder(
     order_date: draft.order_date,
     status: draft.status,
     fulfillment: draft.fulfillment,
+    pickup_point_id: draft.fulfillment === 'retrait' ? draft.pickup_point_id : null,
+    bank_transfer: draft.bank_transfer,
     discount_type: draft.discount_type,
     discount_value: draft.discount_value,
     round_total: draft.round_total,
@@ -94,6 +98,7 @@ export async function saveOrder(
       confection_type_label: c.confection_type_label,
       confection_category: c.confection_category,
       largeur: c.largeur,
+      hauteur: d.is_confection ? (d.hauteur ?? null) : null,
       facteur: c.facteur,
       marge_fixe: c.marge_fixe,
       frais_confection: c.frais_confection,

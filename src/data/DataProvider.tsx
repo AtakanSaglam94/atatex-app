@@ -14,6 +14,7 @@ import type {
   Company,
   ConfectionType,
   EmailTemplate,
+  PickupPoint,
   Product,
   ProductCategory,
   Service,
@@ -27,6 +28,7 @@ interface DataState {
   services: Service[];
   products: Product[];
   clients: Client[];
+  pickupPoints: PickupPoint[];
   emailTemplates: EmailTemplate[];
   reload: () => Promise<void>;
 }
@@ -40,6 +42,7 @@ const TABLES = [
   'services',
   'products',
   'clients',
+  'pickup_points',
   'email_templates',
 ] as const;
 
@@ -51,6 +54,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [services, setServices] = useState<Service[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [pickupPoints, setPickupPoints] = useState<PickupPoint[]>([]);
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const debounce = useRef<Record<string, number>>({});
 
@@ -94,6 +98,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setClients((data as Client[]) ?? []);
         break;
       }
+      case 'pickup_points': {
+        const { data } = await supabase
+          .from('pickup_points')
+          .select('*')
+          .order('position')
+          .order('name');
+        setPickupPoints((data as PickupPoint[]) ?? []);
+        break;
+      }
       case 'email_templates': {
         const { data } = await supabase.from('email_templates').select('*').order('template_key');
         setEmailTemplates((data as EmailTemplate[]) ?? []);
@@ -133,10 +146,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
       services,
       products,
       clients,
+      pickupPoints,
       emailTemplates,
       reload,
     }),
-    [loading, company, categories, confectionTypes, services, products, clients, emailTemplates, reload],
+    [
+      loading,
+      company,
+      categories,
+      confectionTypes,
+      services,
+      products,
+      clients,
+      pickupPoints,
+      emailTemplates,
+      reload,
+    ],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

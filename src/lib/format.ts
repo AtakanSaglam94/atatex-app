@@ -1,6 +1,8 @@
 import type {
+  Client,
   ConfectionCategory,
   OrderFulfillment,
+  PickupPoint,
   OrderStatus,
   ProductUnit,
 } from '@/types';
@@ -70,3 +72,38 @@ export function fmtDateTime(iso: string): string {
 }
 
 export const todayISO = (): string => new Date().toISOString().slice(0, 10);
+
+/** Libellé complet d'un client (raison sociale, ou prénom + nom). */
+export function clientDisplayName(
+  c: Partial<Pick<Client, 'client_type' | 'company_name' | 'first_name' | 'last_name' | 'name'>>,
+): string {
+  if (c.client_type === 'professionnel' && c.company_name?.trim()) return c.company_name.trim();
+  const full = `${c.first_name ?? ''} ${c.last_name ?? ''}`.trim();
+  return full || c.name || 'Client';
+}
+
+/** Adresse d'un client sur une ligne (rue, CP ville, pays si ≠ BE). */
+export function clientAddressText(
+  c: Partial<Pick<Client, 'address_line' | 'postal_code' | 'city' | 'country' | 'address'>>,
+): string {
+  const parts = [
+    c.address_line,
+    [c.postal_code, c.city].filter(Boolean).join(' '),
+    c.country && c.country !== 'BE' ? c.country : '',
+  ].filter(Boolean);
+  return parts.join(', ') || c.address || '';
+}
+
+/** Libellé d'un point de retrait : "Marché de Châtelineau (Samedi)". */
+export function pickupPointLabel(p: Pick<PickupPoint, 'name' | 'day'>): string {
+  return p.day ? `${p.name} (${p.day})` : p.name;
+}
+
+/** Comment le client récupère sa commande. */
+export function fulfillmentText(
+  fulfillment: OrderFulfillment,
+  point: Pick<PickupPoint, 'name' | 'day'> | null,
+): string {
+  if (fulfillment === 'livraison') return 'Livraison à domicile';
+  return point ? `Retrait — ${pickupPointLabel(point)}` : 'Retrait';
+}

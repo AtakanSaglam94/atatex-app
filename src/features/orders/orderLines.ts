@@ -23,6 +23,7 @@ export interface DraftItem {
   is_confection: boolean;
   confection_type_id: string | null;
   largeur: number | null;
+  hauteur: number | null;
 }
 
 let seq = 0;
@@ -41,6 +42,7 @@ export function newProductLine(): DraftItem {
     is_confection: false,
     confection_type_id: null,
     largeur: null,
+    hauteur: null,
   };
 }
 
@@ -57,6 +59,7 @@ export function newServiceLine(service: Service): DraftItem {
     is_confection: false,
     confection_type_id: null,
     largeur: null,
+    hauteur: null,
   };
 }
 
@@ -73,6 +76,7 @@ export function newFreeLine(): DraftItem {
     is_confection: false,
     confection_type_id: null,
     largeur: null,
+    hauteur: null,
   };
 }
 
@@ -89,6 +93,7 @@ export function draftFromOrderItem(it: OrderItem): DraftItem {
     is_confection: it.is_confection,
     confection_type_id: it.confection_type_id,
     largeur: it.largeur != null ? Number(it.largeur) : null,
+    hauteur: it.hauteur != null ? Number(it.hauteur) : null,
   };
 }
 

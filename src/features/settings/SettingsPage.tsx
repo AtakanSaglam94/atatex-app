@@ -4,6 +4,7 @@ import { CompanyPanel } from './CompanyPanel';
 import { CategoriesPanel } from './CategoriesPanel';
 import { ConfectionTypesPanel } from './ConfectionTypesPanel';
 import { ServicesPanel } from './ServicesPanel';
+import { PickupPointsPanel } from './PickupPointsPanel';
 import { EmailTemplatesPanel } from './EmailTemplatesPanel';
 import { UsersPanel } from './UsersPanel';
 
@@ -12,6 +13,7 @@ const TABS = [
   { key: 'categories', label: 'Catégories', el: <CategoriesPanel /> },
   { key: 'confection', label: 'Types de confection', el: <ConfectionTypesPanel /> },
   { key: 'services', label: 'Services', el: <ServicesPanel /> },
+  { key: 'retrait', label: 'Points de retrait', el: <PickupPointsPanel /> },
   { key: 'emails', label: 'Emails', el: <EmailTemplatesPanel /> },
   { key: 'utilisateurs', label: 'Utilisateurs', el: <UsersPanel /> },
 ] as const;

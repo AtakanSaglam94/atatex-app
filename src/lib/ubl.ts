@@ -95,8 +95,10 @@ export function generateUBL({ order, company, totals, invoiceNumber }: UBLInput)
   </cac:Party></cac:AccountingSupplierParty>
   <cac:AccountingCustomerParty><cac:Party>
     <cac:PartyName><cbc:Name>${esc(client?.name)}</cbc:Name></cac:PartyName>
-    <cac:PostalAddress><cbc:StreetName>${esc(client?.address)}</cbc:StreetName>
-      <cac:Country><cbc:IdentificationCode>BE</cbc:IdentificationCode></cac:Country></cac:PostalAddress>
+    <cac:PostalAddress><cbc:StreetName>${esc(client?.address_line || client?.address)}</cbc:StreetName>
+      <cbc:CityName>${esc(client?.city)}</cbc:CityName>
+      <cbc:PostalZone>${esc(client?.postal_code)}</cbc:PostalZone>
+      <cac:Country><cbc:IdentificationCode>${esc(client?.country || 'BE')}</cbc:IdentificationCode></cac:Country></cac:PostalAddress>
     ${
       client?.vat
         ? `<cac:PartyTaxScheme><cbc:CompanyID>${esc(client.vat)}</cbc:CompanyID>

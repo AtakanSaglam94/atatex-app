@@ -129,6 +129,7 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
     sku: product?.sku ?? '',
     category_id: product?.category_id ?? (categories[0]?.id ?? ''),
     price: product?.price ?? 0,
+    cost_price: product?.cost_price ?? 0,
     unit: (product?.unit ?? 'm') as ProductUnit,
     stock: product?.stock ?? 0,
     low_stock_at: product?.low_stock_at ?? 5,
@@ -150,6 +151,7 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
       sku: f.sku.trim(),
       category_id: f.category_id || null,
       price: Number(f.price) || 0,
+      cost_price: Number(f.cost_price) || 0,
       unit: f.unit,
       stock: Number(f.stock) || 0,
       low_stock_at: Number(f.low_stock_at) || 0,
@@ -216,7 +218,7 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
           </select>
         </div>
         <div className="field">
-          <label>Prix (€ / unité)</label>
+          <label>Prix de vente (€ / unité)</label>
           <input
             type="number"
             step="0.01"
@@ -225,6 +227,17 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
             onChange={(e) => setF({ ...f, price: parseFloat(e.target.value) || 0 })}
           />
         </div>
+      </div>
+      <div className="field">
+        <label>Prix de revient (€ / unité) — optionnel</label>
+        <input
+          type="number"
+          step="0.01"
+          min={0}
+          value={f.cost_price || ''}
+          onChange={(e) => setF({ ...f, cost_price: parseFloat(e.target.value) || 0 })}
+        />
+        <div className="hint">Prix d'achat. Sert au calcul de la marge sur le tableau de bord.</div>
       </div>
       <div className="field">
         <label>Quantité maximum par ligne de commande</label>

@@ -41,7 +41,11 @@ Deno.serve(async (req) => {
     );
 
     const [{ data: order }, { data: tpl }, { data: company }] = await Promise.all([
-      admin.from('orders').select('id, order_number, client:clients(name, email)').eq('id', order_id).single(),
+      admin
+        .from('orders')
+        .select('id, order_number, client:clients(name, email), pickup:pickup_points(name, day)')
+        .eq('id', order_id)
+        .single(),
       admin.from('email_templates').select('*').eq('template_key', template_key).single(),
       admin.from('company').select('name').eq('id', 1).single(),
     ]);
@@ -59,10 +63,13 @@ Deno.serve(async (req) => {
       return json({ skipped: 'client sans email' }, 200);
     }
 
+    const pickup = Array.isArray(order.pickup) ? order.pickup[0] : order.pickup;
     const vars = {
       client: client?.name ?? '',
       numero: order.order_number,
       entreprise: company?.name ?? 'ATA-TEX',
+      point: pickup?.name ?? '',
+      jour: pickup?.day ?? '',
     };
     const subject = fill(tpl.subject, vars);
     const text = fill(tpl.body, vars);

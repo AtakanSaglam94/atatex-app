@@ -1,22 +1,14 @@
 import { useMemo, useState } from 'react';
 import { PageHeader, SearchInput, Panel, EmptyState } from '@/components/ui';
 import { Icon } from '@/components/Icon';
-import { Modal } from '@/components/Modal';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useData } from '@/data/DataProvider';
 import { useOrders } from '@/data/useOrders';
 import { useToast } from '@/lib/toast';
 import { supabase } from '@/lib/supabase';
+import { clientDisplayName, clientAddressText } from '@/lib/format';
+import { ClientEditor } from './ClientEditor';
 import type { Client } from '@/types';
-
-const empty: Omit<Client, 'id' | 'created_at'> = {
-  name: '',
-  email: '',
-  phone: '',
-  address: '',
-  vat: '',
-  notes: '',
-};
 
 export function ClientsPage() {
   const { clients } = useData();
@@ -28,7 +20,15 @@ export function ClientsPage() {
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
-    return clients.filter((c) => !q || c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q));
+    return [...clients]
+      .sort((a, b) => clientDisplayName(a).localeCompare(clientDisplayName(b)))
+      .filter(
+        (c) =>
+          !q ||
+          clientDisplayName(c).toLowerCase().includes(q) ||
+          c.email.toLowerCase().includes(q) ||
+          c.city.toLowerCase().includes(q),
+      );
   }, [clients, search]);
 
   const orderCount = (id: string) => orders.filter((o) => o.client_id === id).length;
@@ -59,7 +59,7 @@ export function ClientsPage() {
 
       <Panel>
         <div style={{ padding: 12 }}>
-          <SearchInput value={search} onChange={setSearch} placeholder="Rechercher un client…" />
+          <SearchInput value={search} onChange={setSearch} placeholder="Nom, email, ville…" />
         </div>
         {filtered.length === 0 ? (
           <EmptyState message="Aucun client." />
@@ -68,10 +68,10 @@ export function ClientsPage() {
             <table>
               <thead>
                 <tr>
-                  <th>Nom</th>
+                  <th>Client</th>
                   <th>Contact</th>
                   <th>Adresse</th>
-                  <th style={{ textAlign: 'right' }}>Commandes</th>
+                  <th style={{ textAlign: 'right' }}>Cmd.</th>
                   <th />
                 </tr>
               </thead>
@@ -79,19 +79,20 @@ export function ClientsPage() {
                 {filtered.map((c) => (
                   <tr key={c.id} className="clickable" onClick={() => setEditing(c)}>
                     <td>
-                      {c.name}
-                      {c.vat && (
-                        <div className="mono" style={{ fontSize: 11, color: 'var(--ink-faint)' }}>
-                          {c.vat}
-                        </div>
-                      )}
+                      {clientDisplayName(c)}
+                      <div style={{ fontSize: 11, color: 'var(--ink-faint)' }}>
+                        {c.client_type === 'professionnel' ? 'Professionnel' : 'Particulier'}
+                        {c.vat ? ` · ${c.vat}` : ''}
+                      </div>
                     </td>
                     <td style={{ fontSize: 13 }}>
                       {c.email}
                       {c.email && c.phone && <br />}
                       {c.phone && <span className="mono">{c.phone}</span>}
                     </td>
-                    <td style={{ color: 'var(--ink-soft)', fontSize: 13 }}>{c.address || '—'}</td>
+                    <td style={{ color: 'var(--ink-soft)', fontSize: 13 }}>
+                      {clientAddressText(c) || '—'}
+                    </td>
                     <td className="mono" style={{ textAlign: 'right' }}>
                       {orderCount(c.id)}
                     </td>
@@ -124,7 +125,7 @@ export function ClientsPage() {
       {deleting && (
         <ConfirmDialog
           title="Supprimer le client"
-          message={`Supprimer « ${deleting.name} » ?`}
+          message={`Supprimer « ${clientDisplayName(deleting)} » ?`}
           danger
           confirmLabel="Supprimer"
           onConfirm={() => remove(deleting)}
@@ -132,80 +133,5 @@ export function ClientsPage() {
         />
       )}
     </>
-  );
-}
-
-function ClientEditor({ client, onClose }: { client: Client | null; onClose: () => void }) {
-  const toast = useToast();
-  const [form, setForm] = useState(() => (client ? { ...client } : { ...empty }));
-  const [busy, setBusy] = useState(false);
-  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
-
-  async function save() {
-    if (!form.name.trim()) {
-      toast.error('Le nom est obligatoire.');
-      return;
-    }
-    setBusy(true);
-    const payload = {
-      name: form.name.trim(),
-      email: form.email.trim(),
-      phone: form.phone.trim(),
-      address: form.address.trim(),
-      vat: form.vat.trim(),
-      notes: form.notes.trim(),
-    };
-    const { error } = client
-      ? await supabase.from('clients').update(payload).eq('id', client.id)
-      : await supabase.from('clients').insert(payload);
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.ok(client ? 'Client mis à jour.' : 'Client ajouté.');
-    onClose();
-  }
-
-  return (
-    <Modal
-      title={client ? 'Modifier le client' : 'Nouveau client'}
-      onClose={onClose}
-      footer={
-        <>
-          <button className="btn btn--ghost" onClick={onClose}>
-            Annuler
-          </button>
-          <button className="btn btn--primary" onClick={save} disabled={busy}>
-            {busy ? 'Enregistrement…' : 'Enregistrer'}
-          </button>
-        </>
-      }
-    >
-      <div className="field">
-        <label>Nom / entreprise</label>
-        <input value={form.name} onChange={(e) => set('name', e.target.value)} />
-      </div>
-      <div className="field-row">
-        <div className="field">
-          <label>Email</label>
-          <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} />
-          <div className="hint">Utilisé pour les emails automatiques de suivi de commande.</div>
-        </div>
-        <div className="field">
-          <label>Téléphone</label>
-          <input value={form.phone} onChange={(e) => set('phone', e.target.value)} />
-        </div>
-      </div>
-      <div className="field">
-        <label>Adresse</label>
-        <textarea value={form.address} onChange={(e) => set('address', e.target.value)} />
-      </div>
-      <div className="field">
-        <label>N° de TVA (clients professionnels)</label>
-        <input value={form.vat} onChange={(e) => set('vat', e.target.value)} placeholder="BE0123456789" />
-      </div>
-      <div className="field">
-        <label>Notes</label>
-        <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} />
-      </div>
-    </Modal>
   );
 }

@@ -6,8 +6,17 @@ import { useToast } from '@/lib/toast';
 import { eur, num } from '@/lib/money';
 import { computeOrderTotals } from '@/lib/order-totals';
 import { largeurLimits } from '@/lib/confection';
-import { STATUS_LABEL, STATUS_ORDER, terminalStatusLabel, todayISO, UNIT_LABEL } from '@/lib/format';
-import type { OrderWithRelations } from '@/types';
+import {
+  STATUS_LABEL,
+  STATUS_ORDER,
+  terminalStatusLabel,
+  todayISO,
+  UNIT_LABEL,
+  clientDisplayName,
+  pickupPointLabel,
+} from '@/lib/format';
+import { ClientEditor } from '@/features/clients/ClientEditor';
+import type { Client, OrderWithRelations } from '@/types';
 import {
   computeLine,
   draftFromOrderItem,
@@ -25,7 +34,7 @@ interface Props {
 }
 
 export function OrderEditor({ existing, onClose, onSaved }: Props) {
-  const { clients, products, services, confectionTypes, categories, company } = useData();
+  const { clients, products, services, confectionTypes, categories, pickupPoints, company } = useData();
   const toast = useToast();
   const vatRate = company?.vat_rate ?? 21;
 
@@ -37,6 +46,8 @@ export function OrderEditor({ existing, onClose, onSaved }: Props) {
           order_date: existing.order_date,
           status: existing.status,
           fulfillment: existing.fulfillment,
+          pickup_point_id: existing.pickup_point_id,
+          bank_transfer: existing.bank_transfer,
           discount_type: existing.discount_type,
           discount_value: existing.discount_value,
           round_total: existing.round_total,
@@ -50,6 +61,8 @@ export function OrderEditor({ existing, onClose, onSaved }: Props) {
           order_date: todayISO(),
           status: 'recue',
           fulfillment: 'retrait',
+          pickup_point_id: pickupPoints[0]?.id ?? null,
+          bank_transfer: false,
           discount_type: 'none',
           discount_value: 0,
           round_total: false,
@@ -60,6 +73,7 @@ export function OrderEditor({ existing, onClose, onSaved }: Props) {
   );
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [newClient, setNewClient] = useState(false);
 
   const set = <K extends keyof OrderDraft>(k: K, v: OrderDraft[K]) =>
     setDraft((d) => ({ ...d, [k]: v }));
@@ -120,6 +134,7 @@ export function OrderEditor({ existing, onClose, onSaved }: Props) {
   }
 
   return (
+    <>
     <Modal
       title={existing ? `Commande ${existing.order_number}` : 'Nouvelle commande'}
       size="lg"
@@ -143,14 +158,30 @@ export function OrderEditor({ existing, onClose, onSaved }: Props) {
       <div className="field-row">
         <div className="field">
           <label>Client</label>
-          <select value={draft.client_id} onChange={(e) => set('client_id', e.target.value)}>
-            <option value="">Sélectionner…</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <select
+              style={{ flex: 1 }}
+              value={draft.client_id}
+              onChange={(e) => set('client_id', e.target.value)}
+            >
+              <option value="">Sélectionner…</option>
+              {[...clients]
+                .sort((a, b) => clientDisplayName(a).localeCompare(clientDisplayName(b)))
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {clientDisplayName(c)}
+                  </option>
+                ))}
+            </select>
+            <button
+              type="button"
+              className="btn btn--sm"
+              onClick={() => setNewClient(true)}
+              title="Créer un client"
+            >
+              <Icon name="plus" size={15} /> Nouveau
+            </button>
+          </div>
         </div>
         <div className="field">
           <label>Date</label>
@@ -164,28 +195,49 @@ export function OrderEditor({ existing, onClose, onSaved }: Props) {
 
       <div className="field-row">
         <div className="field">
-          <label>Remise / retrait</label>
+          <label>Mode de remise</label>
           <select
             value={draft.fulfillment}
             onChange={(e) => set('fulfillment', e.target.value as OrderDraft['fulfillment'])}
           >
-            <option value="retrait">Retrait en magasin / marché → « Finalisé »</option>
-            <option value="livraison">Livraison → « Livré »</option>
+            <option value="retrait">Retrait (dépôt / marché) → « Finalisé »</option>
+            <option value="livraison">Livraison à domicile → « Livré »</option>
           </select>
         </div>
-        <div className="field">
-          <label>Statut</label>
-          <select
-            value={draft.status}
-            onChange={(e) => set('status', e.target.value as OrderDraft['status'])}
-          >
-            {STATUS_ORDER.map((s) => (
-              <option key={s} value={s}>
-                {s === 'termine' ? terminalStatusLabel(draft.fulfillment) : STATUS_LABEL[s]}
-              </option>
-            ))}
-          </select>
-        </div>
+        {draft.fulfillment === 'retrait' ? (
+          <div className="field">
+            <label>Point de retrait</label>
+            <select
+              value={draft.pickup_point_id ?? ''}
+              onChange={(e) => set('pickup_point_id', e.target.value || null)}
+            >
+              <option value="">À préciser…</option>
+              {pickupPoints
+                .filter((p) => p.active || p.id === draft.pickup_point_id)
+                .map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {pickupPointLabel(p)}
+                  </option>
+                ))}
+            </select>
+          </div>
+        ) : (
+          <div className="field" aria-hidden />
+        )}
+      </div>
+
+      <div className="field">
+        <label>Statut</label>
+        <select
+          value={draft.status}
+          onChange={(e) => set('status', e.target.value as OrderDraft['status'])}
+        >
+          {STATUS_ORDER.map((s) => (
+            <option key={s} value={s}>
+              {s === 'termine' ? terminalStatusLabel(draft.fulfillment) : STATUS_LABEL[s]}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="label" style={{ marginTop: 6 }}>Articles</div>
@@ -289,6 +341,14 @@ export function OrderEditor({ existing, onClose, onSaved }: Props) {
         />
         Arrondir le total à l'euro (paiement en espèces)
       </label>
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, marginTop: 6 }}>
+        <input
+          type="checkbox"
+          checked={draft.bank_transfer}
+          onChange={(e) => set('bank_transfer', e.target.checked)}
+        />
+        Paiement par virement bancaire (à vérifier sur le compte)
+      </label>
 
       <div className="field" style={{ marginTop: 14 }}>
         <label>Notes internes</label>
@@ -323,6 +383,15 @@ export function OrderEditor({ existing, onClose, onSaved }: Props) {
         )}
       </div>
     </Modal>
+
+    {newClient && (
+      <ClientEditor
+        client={null}
+        onClose={() => setNewClient(false)}
+        onSaved={(c: Client) => set('client_id', c.id)}
+      />
+    )}
+    </>
   );
 }
 
@@ -445,7 +514,7 @@ function ProductLineRow({
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns: '1fr 1fr 1fr',
             gap: 8,
             marginTop: 8,
             padding: 10,
@@ -462,6 +531,16 @@ function ProductLineRow({
               step="0.01"
               value={draft.largeur ?? ''}
               onChange={(e) => onChange({ largeur: parseFloat(e.target.value) || null })}
+            />
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label>Hauteur souhaitée (m)</label>
+            <input
+              type="number"
+              min={0}
+              step="0.01"
+              value={draft.hauteur ?? ''}
+              onChange={(e) => onChange({ hauteur: parseFloat(e.target.value) || null })}
             />
           </div>
           <div className="field" style={{ margin: 0 }}>
