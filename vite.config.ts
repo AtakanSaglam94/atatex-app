@@ -29,6 +29,7 @@ export default defineConfig({
         // V1 : en ligne, optimisé 4G. On met en cache l'app shell et les polices,
         // pas les données métier (toujours fraîches via Supabase).
         globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         navigateFallbackDenylist: [/^\/api/, /supabase/],
         runtimeCaching: [
           {

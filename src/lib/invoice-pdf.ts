@@ -1,12 +1,11 @@
-import pdfMake from 'pdfmake/build/pdfmake';
-import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 import type { TDocumentDefinitions, CustomTableLayout, TableCell } from 'pdfmake/interfaces';
 import type { Company, OrderWithRelations } from '@/types';
 import type { OrderTotals } from './order-totals';
 import { eur, num } from './money';
 import { fmtDate } from './format';
 
-// Compatibilité entre versions de pdfmake pour le chargement des polices embarquées
+// pdfmake (+ polices embarquées) pèse ~2 Mo : chargé à la demande, uniquement
+// quand on génère réellement une facture.
 type VfsShape = {
   vfs?: Record<string, string>;
   pdfMake?: { vfs?: Record<string, string> };
@@ -15,8 +14,26 @@ type VfsShape = {
 function resolveVfs(m: VfsShape): Record<string, string> | undefined {
   return m.vfs ?? m.pdfMake?.vfs ?? (m.default ? resolveVfs(m.default) : undefined);
 }
-const vfs = resolveVfs(pdfFonts as unknown as VfsShape);
-if (vfs) (pdfMake as unknown as { vfs: Record<string, string> }).vfs = vfs;
+
+let pdfMakePromise: Promise<{ createPdf: (doc: TDocumentDefinitions) => { download: (name: string) => void; open: () => void } }> | null = null;
+
+function getPdfMake() {
+  if (!pdfMakePromise) {
+    pdfMakePromise = Promise.all([
+      import('pdfmake/build/pdfmake'),
+      import('pdfmake/build/vfs_fonts'),
+    ]).then(([mod, fonts]) => {
+      const pdfMake = ((mod as unknown as { default?: unknown }).default ?? mod) as {
+        vfs?: Record<string, string>;
+        createPdf: (doc: TDocumentDefinitions) => { download: (name: string) => void; open: () => void };
+      };
+      const vfs = resolveVfs(fonts as unknown as VfsShape);
+      if (vfs) pdfMake.vfs = vfs;
+      return pdfMake;
+    });
+  }
+  return pdfMakePromise;
+}
 
 const COGNAC = '#9a5a2c';
 const INK = '#2a2018';
@@ -29,7 +46,8 @@ interface InvoiceInput {
   invoiceNumber: string;
 }
 
-export function buildInvoicePdf({ order, company, totals, invoiceNumber }: InvoiceInput) {
+export async function buildInvoicePdf({ order, company, totals, invoiceNumber }: InvoiceInput) {
+  const pdfMake = await getPdfMake();
   const client = order.client;
 
   const headerRow: TableCell[] = [

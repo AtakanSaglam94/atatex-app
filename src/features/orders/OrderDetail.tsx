@@ -70,7 +70,7 @@ export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
     const number = order.invoice_number ?? (await assignInvoiceNumber(order.id));
     setBusy(false);
     if (!number) return toast.error('Numéro de facture impossible à générer.');
-    buildInvoicePdf({ order, company: company!, totals, invoiceNumber: number }).download(
+    (await buildInvoicePdf({ order, company: company!, totals, invoiceNumber: number })).download(
       `${number}.pdf`,
     );
     if (!order.invoice_number) onChanged();

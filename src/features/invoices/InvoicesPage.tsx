@@ -46,7 +46,7 @@ export function InvoicesPage() {
     const number = row.o.invoice_number ?? (await assignInvoiceNumber(orderId));
     setBusyId(null);
     if (!number) return toast.error('Numéro de facture impossible.');
-    buildInvoicePdf({ order: row.o, company, totals: row.t, invoiceNumber: number }).download(
+    (await buildInvoicePdf({ order: row.o, company, totals: row.t, invoiceNumber: number })).download(
       `${number}.pdf`,
     );
     if (!row.o.invoice_number) reload();
