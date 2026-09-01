@@ -11,11 +11,13 @@ import {
   STATUS_ORDER,
   terminalStatusLabel,
   todayISO,
-  UNIT_LABEL,
   clientDisplayName,
   pickupPointLabel,
 } from '@/lib/format';
 import { ClientEditor } from '@/features/clients/ClientEditor';
+import { ProductPicker } from '@/components/ProductPicker';
+import { useOrders } from '@/data/useOrders';
+import { rollConsumption, rollsForProduct } from '@/lib/rolls';
 import type { Client, OrderWithRelations } from '@/types';
 import {
   computeLine,
@@ -426,9 +428,14 @@ function ProductLineRow({
   onChange: (patch: Partial<DraftItem>) => void;
   onRemove: () => void;
 }) {
-  const { products, confectionTypes, categories } = useData();
+  const { products, confectionTypes, categories, stockRolls } = useData();
+  const { orders: allOrders } = useOrders();
   const product = products.find((p) => p.id === draft.product_id) ?? null;
   const canConfection = product?.unit === 'm' && !!product?.confection_category;
+  const rolls = useMemo(
+    () => (product ? rollsForProduct(product.id, stockRolls, rollConsumption(allOrders)) : []),
+    [product, stockRolls, allOrders],
+  );
   const selectedType = confectionTypes.find((t) => t.id === draft.confection_type_id) ?? null;
   const catMax = categories.find((c) => c.id === product?.category_id)?.largeur_max ?? null;
   const { min: effMin, max: effMax } = largeurLimits(selectedType, catMax, product);
@@ -457,29 +464,19 @@ function ProductLineRow({
       }}
     >
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <select
-          style={{ flex: 1, minWidth: 0 }}
-          value={draft.product_id ?? ''}
-          onChange={(e) => {
-            const p = products.find((x) => x.id === e.target.value);
+        <ProductPicker
+          value={draft.product_id}
+          onSelect={(p) =>
             onChange({
-              product_id: e.target.value || null,
+              product_id: p?.id ?? null,
               label: p?.name ?? '',
               unit: p?.unit ?? 'piece',
               unit_price: p?.price ?? 0,
-              is_confection: p?.unit === 'm' ? draft.is_confection : false,
-            });
-          }}
-        >
-          <option value="">Choisir un produit…</option>
-          {products
-            .filter((p) => p.active)
-            .map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name} — {eur(p.price)}/{UNIT_LABEL[p.unit]}
-              </option>
-            ))}
-        </select>
+              is_confection: p?.unit === 'm' && !!p?.confection_category ? draft.is_confection : false,
+              roll_id: null,
+            })
+          }
+        />
         {!draft.is_confection && (
           <input
             type="number"
@@ -569,6 +566,30 @@ function ProductLineRow({
                 ))}
             </select>
           </div>
+
+          {rolls.length > 0 && (
+            <div className="field" style={{ margin: 0, gridColumn: '1 / -1' }}>
+              <label>Rouleau à découper</label>
+              <select
+                value={draft.roll_id ?? ''}
+                onChange={(e) => onChange({ roll_id: e.target.value || null })}
+              >
+                <option value="">— (non attribué)</option>
+                {rolls.map(({ roll, remaining }) => {
+                  const need = computed.metrage ?? 0;
+                  const short = need > 0 && remaining < need;
+                  return (
+                    <option key={roll.id} value={roll.id}>
+                      {roll.label || 'Rouleau'} — {num(remaining, 0, 2)} m restants
+                      {roll.location ? ` (${roll.location})` : ''}
+                      {short ? ' ⚠ insuffisant' : ''}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          )}
+
           <div style={{ gridColumn: '1 / -1', fontSize: 12 }}>
             {computed.error ? (
               <span style={{ color: 'var(--danger)' }}>{computed.error}</span>

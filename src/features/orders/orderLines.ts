@@ -24,6 +24,7 @@ export interface DraftItem {
   confection_type_id: string | null;
   largeur: number | null;
   hauteur: number | null;
+  roll_id: string | null;
 }
 
 let seq = 0;
@@ -43,6 +44,7 @@ export function newProductLine(): DraftItem {
     confection_type_id: null,
     largeur: null,
     hauteur: null,
+    roll_id: null,
   };
 }
 
@@ -60,6 +62,7 @@ export function newServiceLine(service: Service): DraftItem {
     confection_type_id: null,
     largeur: null,
     hauteur: null,
+    roll_id: null,
   };
 }
 
@@ -77,6 +80,7 @@ export function newFreeLine(): DraftItem {
     confection_type_id: null,
     largeur: null,
     hauteur: null,
+    roll_id: null,
   };
 }
 
@@ -94,6 +98,7 @@ export function draftFromOrderItem(it: OrderItem): DraftItem {
     confection_type_id: it.confection_type_id,
     largeur: it.largeur != null ? Number(it.largeur) : null,
     hauteur: it.hauteur != null ? Number(it.hauteur) : null,
+    roll_id: it.roll_id,
   };
 }
 

@@ -7,6 +7,15 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(__dirname, 'src') },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('@zxing')) return 'zxing';
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     VitePWA({
@@ -29,6 +38,7 @@ export default defineConfig({
         // V1 : en ligne, optimisé 4G. On met en cache l'app shell et les polices,
         // pas les données métier (toujours fraîches via Supabase).
         globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+        globIgnores: ['**/zxing*.js'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         navigateFallbackDenylist: [/^\/api/, /supabase/],
         runtimeCaching: [

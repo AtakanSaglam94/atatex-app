@@ -31,9 +31,11 @@ interface Props {
 }
 
 export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
-  const { company, pickupPoints } = useData();
+  const { company, pickupPoints, stockRolls } = useData();
   const { isAdmin } = useAuth();
   const pickupPoint = pickupPoints.find((p) => p.id === order.pickup_point_id) ?? null;
+  const rollLabel = (id: string | null) =>
+    id ? (stockRolls.find((r) => r.id === id)?.label || 'rouleau') : null;
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -211,6 +213,7 @@ export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
                       Largeur {num(it.largeur ?? 0, 0, 2)} m
                       {it.hauteur ? ` × hauteur ${num(it.hauteur, 0, 2)} m` : ''} → {num(it.metrage ?? 0, 0, 2)} m à
                       commander · frais {eur(it.frais_confection ?? 0)}/m
+                      {rollLabel(it.roll_id) ? ` · ${rollLabel(it.roll_id)}` : ''}
                     </div>
                   )}
                 </td>

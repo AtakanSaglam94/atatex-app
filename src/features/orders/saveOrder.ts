@@ -99,6 +99,7 @@ export async function saveOrder(
       confection_category: c.confection_category,
       largeur: c.largeur,
       hauteur: d.is_confection ? (d.hauteur ?? null) : null,
+      roll_id: d.is_confection ? (d.roll_id ?? null) : null,
       facteur: c.facteur,
       marge_fixe: c.marge_fixe,
       frais_confection: c.frais_confection,

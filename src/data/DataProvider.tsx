@@ -18,6 +18,7 @@ import type {
   Product,
   ProductCategory,
   Service,
+  StockRoll,
 } from '@/types';
 
 interface DataState {
@@ -29,6 +30,7 @@ interface DataState {
   products: Product[];
   clients: Client[];
   pickupPoints: PickupPoint[];
+  stockRolls: StockRoll[];
   emailTemplates: EmailTemplate[];
   reload: () => Promise<void>;
 }
@@ -43,6 +45,7 @@ const TABLES = [
   'products',
   'clients',
   'pickup_points',
+  'stock_rolls',
   'email_templates',
 ] as const;
 
@@ -55,6 +58,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [pickupPoints, setPickupPoints] = useState<PickupPoint[]>([]);
+  const [stockRolls, setStockRolls] = useState<StockRoll[]>([]);
   const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
   const debounce = useRef<Record<string, number>>({});
 
@@ -107,6 +111,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setPickupPoints((data as PickupPoint[]) ?? []);
         break;
       }
+      case 'stock_rolls': {
+        const { data } = await supabase
+          .from('stock_rolls')
+          .select('*')
+          .order('created_at');
+        setStockRolls((data as StockRoll[]) ?? []);
+        break;
+      }
       case 'email_templates': {
         const { data } = await supabase.from('email_templates').select('*').order('template_key');
         setEmailTemplates((data as EmailTemplate[]) ?? []);
@@ -147,6 +159,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       products,
       clients,
       pickupPoints,
+      stockRolls,
       emailTemplates,
       reload,
     }),
@@ -159,6 +172,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       products,
       clients,
       pickupPoints,
+      stockRolls,
       emailTemplates,
       reload,
     ],

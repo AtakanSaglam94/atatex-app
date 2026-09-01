@@ -7,14 +7,17 @@ import { useData } from '@/data/DataProvider';
 import { useOrders } from '@/data/useOrders';
 import { useToast } from '@/lib/toast';
 import { supabase } from '@/lib/supabase';
-import { eur } from '@/lib/money';
+import { eur, num } from '@/lib/money';
 import { UNIT_LABEL, CONFECTION_CATEGORY_LABEL } from '@/lib/format';
 import { uploadProductPhoto, deleteProductPhoto, MAX_PHOTOS } from '@/lib/photos';
+import { rollConsumption, displayedStock } from '@/lib/rolls';
+import { RollsSection } from './RollsSection';
 import type { Product, ProductUnit } from '@/types';
 
 export function StockPage() {
-  const { products, categories } = useData();
+  const { products, categories, stockRolls } = useData();
   const { orders } = useOrders();
+  const consumed = useMemo(() => rollConsumption(orders), [orders]);
   const toast = useToast();
   const [search, setSearch] = useState('');
   const [showArchived, setShowArchived] = useState(false);
@@ -114,9 +117,15 @@ export function StockPage() {
                       {eur(p.price)}/{UNIT_LABEL[p.unit]}
                     </td>
                     <td className="mono" style={{ textAlign: 'right' }}>
-                      <span className={`badge badge--${p.stock <= p.low_stock_at ? 'low' : 'neutral'}`}>
-                        {p.stock} {p.unit === 'm' ? 'm' : ''}
-                      </span>
+                      {(() => {
+                        const st = displayedStock(p, stockRolls, consumed);
+                        return (
+                          <span className={`badge badge--${st.total <= p.low_stock_at ? 'low' : 'neutral'}`}>
+                            {num(st.total, 0, 2)} {p.unit === 'm' ? 'm' : ''}
+                            {st.hasRolls ? ` · ${stockRolls.filter((r) => r.product_id === p.id && r.active).length} rlx` : ''}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                       {!p.active && (
@@ -177,6 +186,7 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
   const [f, setF] = useState(() => ({
     name: product?.name ?? '',
     sku: product?.sku ?? '',
+    barcode: product?.barcode ?? '',
     category_id: product?.category_id ?? (categories[0]?.id ?? ''),
     price: product?.price ?? 0,
     cost_price: product?.cost_price ?? 0,
@@ -223,6 +233,7 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
     const payload = {
       name: f.name.trim(),
       sku: f.sku.trim(),
+      barcode: f.barcode.trim(),
       category_id: f.category_id || null,
       price: Number(f.price) || 0,
       cost_price: Number(f.cost_price) || 0,
@@ -267,10 +278,18 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
         <label>Nom du produit</label>
         <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
       </div>
-      <div className="field-row">
+      <div className="field-row field-row--3">
         <div className="field">
           <label>Référence</label>
           <input value={f.sku} onChange={(e) => setF({ ...f, sku: e.target.value })} />
+        </div>
+        <div className="field">
+          <label>Code-barres</label>
+          <input
+            value={f.barcode}
+            onChange={(e) => setF({ ...f, barcode: e.target.value })}
+            placeholder="Scan ou saisie"
+          />
         </div>
         <div className="field">
           <label>Catégorie</label>
@@ -534,6 +553,8 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
           La 1ʳᵉ photo (bordure) sert de vignette au catalogue. JPEG / PNG / WebP, 5 Mo max.
         </div>
       </div>
+
+      {product && f.unit === 'm' && <RollsSection product={product} />}
     </Modal>
   );
 }

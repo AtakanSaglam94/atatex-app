@@ -79,6 +79,7 @@ export interface Product {
   hauteur_min: number | null;
   hauteur_max: number | null;
   confection_category: ConfectionCategory | null;
+  barcode: string;
   photo_url: string;
   photo_urls: string[];
   active: boolean;
@@ -117,6 +118,20 @@ export interface PickupPoint {
   created_at: string;
 }
 
+export interface StockRoll {
+  id: string;
+  product_id: string;
+  label: string;
+  length_initial: number;
+  manual_adjustment: number;
+  location: string;
+  barcode: string;
+  received_at: string | null;
+  notes: string;
+  active: boolean;
+  created_at: string;
+}
+
 export interface OrderItem {
   id: string;
   order_id: string;
@@ -139,6 +154,7 @@ export interface OrderItem {
   marge_fixe: number | null;
   frais_confection: number | null;
   metrage: number | null;
+  roll_id: string | null;
   created_at: string;
 }
 
