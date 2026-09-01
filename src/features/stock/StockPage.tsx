@@ -204,6 +204,8 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
     confection_category:
       product?.confection_category ?? ('' as '' | 'rideau_voilage' | 'tenture'),
     active: product?.active ?? true,
+    published_online: product?.published_online ?? false,
+    online_description: product?.online_description ?? '',
   }));
   const [photos, setPhotos] = useState<string[]>(() => product?.photo_urls ?? []);
   const [busy, setBusy] = useState(false);
@@ -252,6 +254,8 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
       photo_urls: photos,
       photo_url: photos[0] ?? '',
       active: f.active,
+      published_online: f.published_online,
+      online_description: f.online_description.trim(),
     };
     const { error } = product
       ? await supabase.from('products').update(payload).eq('id', product.id)
@@ -554,6 +558,33 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
         </div>
         <div className="hint">
           La 1ʳᵉ photo (bordure) sert de vignette au catalogue. JPEG / PNG / WebP, 5 Mo max.
+        </div>
+      </div>
+
+      <div
+        className="field"
+        style={{ marginTop: 8, paddingTop: 12, borderTop: '1px dashed var(--line-strong)' }}
+      >
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input
+            type="checkbox"
+            checked={f.published_online}
+            onChange={(e) => setF({ ...f, published_online: e.target.checked })}
+          />
+          En vente sur la boutique en ligne (ata-tex.be)
+        </label>
+        {f.published_online && (
+          <textarea
+            style={{ marginTop: 8 }}
+            rows={3}
+            placeholder="Description affichée sur la fiche produit du site (matière, entretien, dimensions…)"
+            value={f.online_description}
+            onChange={(e) => setF({ ...f, online_description: e.target.value })}
+          />
+        )}
+        <div className="hint">
+          La photo, le nom et le prix TTC sont repris automatiquement. Décoche pour retirer
+          l'article du site sans le supprimer.
         </div>
       </div>
 

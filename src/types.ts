@@ -85,6 +85,8 @@ export interface Product {
   photo_url: string;
   photo_urls: string[];
   active: boolean;
+  published_online: boolean;
+  online_description: string;
   created_at: string;
   updated_at: string;
 }

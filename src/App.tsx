@@ -15,6 +15,18 @@ import { AgendaPage } from './features/agenda/AgendaPage';
 import { InvoicesPage } from './features/invoices/InvoicesPage';
 import { AccountingPage } from './features/accounting/AccountingPage';
 import { SettingsPage } from './features/settings/SettingsPage';
+import { ShopApp } from './shop/ShopApp';
+
+/**
+ * La boutique publique (ata-tex.be) et l'app de gestion partagent le même
+ * déploiement. On aiguille selon le domaine — ou `?boutique` pour tester
+ * la boutique avant que le DNS ne pointe.
+ */
+function isShopHost(): boolean {
+  const h = window.location.hostname;
+  if (h === 'ata-tex.be' || h === 'www.ata-tex.be' || h.startsWith('boutique.')) return true;
+  return new URLSearchParams(window.location.search).has('boutique');
+}
 
 function Shell() {
   const { session, loading } = useAuth();
@@ -67,6 +79,7 @@ function Gate() {
 }
 
 export default function App() {
+  if (isShopHost()) return <ShopApp />;
   return (
     <ErrorBoundary label="Application">
       <AuthProvider>
