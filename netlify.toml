@@ -1,11 +1,14 @@
-[build]
-  command = "npm run build"
-  publish = "dist"
+# Ce dépôt alimente DEUX sites Netlify distincts :
+#   • gestion (privé)  → build "npm run build"       → publie "dist"
+#   • boutique (public) → build "npm run build:shop"  → publie "dist-shop"
+# La commande de build et le dossier publié sont donc réglés dans l'UI de
+# chaque site (Site settings → Build & deploy), PAS ici.
+# Ce fichier ne contient que ce qui est commun aux deux.
 
 [build.environment]
   NODE_VERSION = "20"
 
-# SPA : toutes les routes servent index.html
+# SPA : toutes les routes servent index.html (présent dans dist/ ET dist-shop/)
 [[redirects]]
   from = "/*"
   to = "/index.html"

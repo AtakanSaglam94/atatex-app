@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:shop": "tsc -b && vite build --mode shop",
     "preview": "vite preview",
+    "preview:shop": "vite preview --outDir dist-shop",
     "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {

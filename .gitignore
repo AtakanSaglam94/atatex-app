@@ -7,3 +7,4 @@ dev-dist
 *.tsbuildinfo
 .DS_Store
 .netlify
+dist-shop

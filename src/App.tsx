@@ -15,17 +15,18 @@ import { AgendaPage } from './features/agenda/AgendaPage';
 import { InvoicesPage } from './features/invoices/InvoicesPage';
 import { AccountingPage } from './features/accounting/AccountingPage';
 import { SettingsPage } from './features/settings/SettingsPage';
-import { ShopApp } from './shop/ShopApp';
 
 /**
- * La boutique publique (ata-tex.be) et l'app de gestion partagent le même
- * déploiement. On aiguille selon le domaine — ou `?boutique` pour tester
- * la boutique avant que le DNS ne pointe.
+ * L'app de gestion et la boutique publique sont deux builds séparés
+ * (`dist/` vs `dist-shop/`) déployés sur deux sites Netlify distincts :
+ * ce bundle ne contient AUCUN code de la boutique, et inversement.
+ *
+ * Garde-fou : si ce build se retrouve servi sur le domaine public
+ * (mauvaise config DNS), on n'affiche rien d'exploitable.
  */
-function isShopHost(): boolean {
+function isPublicDomain(): boolean {
   const h = window.location.hostname;
-  if (h === 'ata-tex.be' || h === 'www.ata-tex.be' || h.startsWith('boutique.')) return true;
-  return new URLSearchParams(window.location.search).has('boutique');
+  return h === 'ata-tex.be' || h === 'www.ata-tex.be';
 }
 
 function Shell() {
@@ -79,7 +80,16 @@ function Gate() {
 }
 
 export default function App() {
-  if (isShopHost()) return <ShopApp />;
+  if (isPublicDomain()) {
+    return (
+      <div className="spinner-page" style={{ textAlign: 'center', padding: 40 }}>
+        <p>
+          Cette adresse est réservée à la boutique&nbsp;:{' '}
+          <a href="https://ata-tex.be">ata-tex.be</a>
+        </p>
+      </div>
+    );
+  }
   return (
     <ErrorBoundary label="Application">
       <AuthProvider>
