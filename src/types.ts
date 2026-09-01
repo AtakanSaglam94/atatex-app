@@ -28,6 +28,8 @@ export interface Company {
   phone: string;
   vat_rate: number;
   invoice_terms: string;
+  google_review_url: string;
+  website_url: string;
   updated_at: string;
 }
 

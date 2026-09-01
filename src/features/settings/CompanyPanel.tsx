@@ -17,6 +17,8 @@ export function CompanyPanel() {
     phone: company?.phone ?? '',
     vat_rate: company?.vat_rate ?? 21,
     invoice_terms: company?.invoice_terms ?? '',
+    google_review_url: company?.google_review_url ?? '',
+    website_url: company?.website_url ?? '',
   }));
   const [busy, setBusy] = useState(false);
   const set = (k: keyof typeof f, v: string | number) => setF((s) => ({ ...s, [k]: v }));
@@ -78,6 +80,25 @@ export function CompanyPanel() {
       <div className="field">
         <label>Mention de paiement (bas de facture)</label>
         <input value={f.invoice_terms} onChange={(e) => set('invoice_terms', e.target.value)} />
+      </div>
+      <div className="field-row">
+        <div className="field">
+          <label>Lien avis Google</label>
+          <input
+            value={f.google_review_url}
+            onChange={(e) => set('google_review_url', e.target.value)}
+            placeholder="https://g.page/r/…/review"
+          />
+          <div className="hint">Utilisé dans l'email d'avis envoyé 7 jours après « Terminé ».</div>
+        </div>
+        <div className="field">
+          <label>Site web</label>
+          <input
+            value={f.website_url}
+            onChange={(e) => set('website_url', e.target.value)}
+            placeholder="https://ata-tex.be"
+          />
+        </div>
       </div>
       <button className="btn btn--primary" onClick={save} disabled={busy}>
         {busy ? 'Enregistrement…' : 'Enregistrer'}

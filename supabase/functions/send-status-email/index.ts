@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
         .eq('id', order_id)
         .single(),
       admin.from('email_templates').select('*').eq('template_key', template_key).single(),
-      admin.from('company').select('name').eq('id', 1).single(),
+      admin.from('company').select('name, google_review_url, website_url').eq('id', 1).single(),
     ]);
 
     if (!order) return json({ error: 'Commande introuvable' }, 404);
@@ -73,6 +73,8 @@ Deno.serve(async (req) => {
       point: pickup?.name ?? '',
       jour: pickup?.day ? ` (le ${pickup.day})` : '',
       adresse: pickup?.address ?? '',
+      lien_google: company?.google_review_url ?? '',
+      lien_site: company?.website_url ?? '',
     };
     const subject = fill(tpl.subject, vars);
     const text = fill(tpl.body, vars);
