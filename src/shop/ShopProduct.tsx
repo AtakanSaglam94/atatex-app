@@ -4,14 +4,17 @@ import { eur } from '@/lib/money';
 import { UNIT_LABEL } from '@/lib/format';
 import { useShopCatalog, productPhotos } from './useShopCatalog';
 import { useCart } from './cart';
+import { ConfectionConfigurator } from './ConfectionConfigurator';
 
 export function ShopProduct() {
   const { id } = useParams();
   const nav = useNavigate();
-  const { loading, products } = useShopCatalog();
+  const { loading, products, categories, confectionTypes } = useShopCatalog();
   const { add } = useCart();
 
   const product = useMemo(() => products.find((p) => p.id === id) ?? null, [products, id]);
+  const categoryLargeurMax =
+    categories.find((c) => c.id === product?.category_id)?.largeur_max ?? null;
   const photos = product ? productPhotos(product) : [];
   const [pi, setPi] = useState(0);
   const [qty, setQty] = useState(1);
@@ -80,12 +83,12 @@ export function ShopProduct() {
         )}
 
         {isConfection ? (
-          <div className="shop-notice" style={{ marginTop: 18 }}>
-            Cet article se commande <strong>sur mesure</strong> (largeur, hauteur, type de
-            confection). Le configurateur en ligne arrive très bientôt. En attendant,
-            écrivez-nous à <a href="mailto:commande@ata-tex.be">commande@ata-tex.be</a> pour
-            un devis.
-          </div>
+          <ConfectionConfigurator
+            product={product}
+            confectionTypes={confectionTypes}
+            categoryLargeurMax={categoryLargeurMax}
+            photo={photos[0]}
+          />
         ) : (
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 18, flexWrap: 'wrap' }}>
             <div className="shop-qty">

@@ -47,7 +47,7 @@ export function ShopCart() {
             </div>
             <div style={{ textAlign: 'right' }}>
               <div className="mono" style={{ fontSize: 14 }}>
-                {eur(l.unit_price * l.qty)}
+                {eur(l.line_total ?? l.unit_price * l.qty)}
               </div>
               <button
                 onClick={() => remove(l.key)}

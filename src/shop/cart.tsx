@@ -11,6 +11,8 @@ export interface CartLine {
   /** prix unitaire TTC (par pièce, ou par mètre pour la confection) */
   unit_price: number;
   qty: number;
+  /** total de ligne TTC — prioritaire sur unit_price×qty (évite les écarts d'arrondi confection) */
+  line_total?: number;
   photo?: string;
   is_confection?: boolean;
   confection_type_id?: string;
@@ -63,7 +65,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const i = prev.findIndex((l) => l.key === key);
       if (i >= 0) {
         const next = [...prev];
-        next[i] = { ...next[i], qty: next[i].qty + line.qty };
+        const qty = next[i].qty + line.qty;
+        next[i] = {
+          ...next[i],
+          qty,
+          line_total: next[i].is_confection
+            ? (next[i].line_total ?? 0) + (line.line_total ?? line.unit_price * line.qty)
+            : undefined,
+        };
         return next;
       }
       return [...prev, { ...line, key }];
@@ -74,7 +83,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setLines((prev) =>
       qty <= 0
         ? prev.filter((l) => l.key !== key)
-        : prev.map((l) => (l.key === key ? { ...l, qty } : l)),
+        : prev.map((l) =>
+            l.key === key
+              ? {
+                  ...l,
+                  qty,
+                  line_total:
+                    l.is_confection && l.line_total != null
+                      ? (l.line_total / l.qty) * qty
+                      : undefined,
+                }
+              : l,
+          ),
     );
   }, []);
 
@@ -87,7 +107,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const value = useMemo<CartState>(() => {
     const count = lines.reduce((s, l) => s + (l.is_confection ? 1 : l.qty), 0);
     const subtotal =
-      Math.round(lines.reduce((s, l) => s + l.unit_price * l.qty, 0) * 100) / 100;
+      Math.round(
+        lines.reduce((s, l) => s + (l.line_total ?? l.unit_price * l.qty), 0) * 100,
+      ) / 100;
     return { lines, count, subtotal, add, setQty, remove, clear };
   }, [lines, add, setQty, remove, clear]);
 
