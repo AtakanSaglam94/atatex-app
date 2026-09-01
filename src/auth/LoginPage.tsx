@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Logo } from '@/components/Logo';
 import { useAuth } from './AuthProvider';
 
 export function LoginPage() {
@@ -32,26 +33,8 @@ export function LoginPage() {
     >
       <div className="card" style={{ width: '100%', maxWidth: 380, padding: 28 }}>
         <div style={{ textAlign: 'center', marginBottom: 22 }}>
-          <div
-            aria-hidden
-            style={{
-              width: 46,
-              height: 46,
-              borderRadius: 12,
-              background: 'var(--accent)',
-              color: 'var(--on-accent)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 12px',
-              fontFamily: 'var(--font-display)',
-              fontSize: 22,
-              fontWeight: 600,
-            }}
-          >
-            A
-          </div>
-          <h1 style={{ fontSize: 22 }}>ATA-TEX</h1>
+          <Logo size={56} className="login-logo" />
+          <h1 style={{ fontSize: 22, marginTop: 10 }}>ATA-TEX</h1>
           <p style={{ color: 'var(--ink-soft)', fontSize: 13.5, margin: '4px 0 0' }}>
             Gestion des commandes
           </p>

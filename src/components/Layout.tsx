@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '@/auth/AuthProvider';
 import { Icon } from './Icon';
+import { Logo } from './Logo';
 
 const NAV = [
   { to: '/', label: 'Tableau de bord', icon: 'dashboard' as const, end: true },
@@ -42,7 +43,7 @@ export function Layout({ children }: { children: ReactNode }) {
       <aside className="sidebar">
         <div className="sidebar__brand">
           <div className="sidebar__mark" aria-hidden>
-            A
+            <Logo size={22} />
           </div>
           <div>
             <div className="sidebar__name">ATA-TEX</div>
@@ -92,7 +93,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
       <div className="topbar">
         <div className="sidebar__mark" aria-hidden>
-          A
+          <Logo size={22} />
         </div>
         <span className="sidebar__name">ATA-TEX</span>
         <span className="badge badge--neutral">{isAdmin ? 'Admin' : 'Travailleur'}</span>

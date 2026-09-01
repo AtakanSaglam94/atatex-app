@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '@/components/Icon';
+import { Logo } from '@/components/Logo';
 import { eur, num } from '@/lib/money';
 import { fmtDate, clientDisplayName, clientAddressText } from '@/lib/format';
 import type { OrderTotals } from '@/lib/order-totals';
@@ -22,8 +23,14 @@ export function PrintableInvoice({ order, company, totals, invoiceNumber, onClos
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [onClose]);
+    // le titre du document = en-tête que le navigateur imprime en marge
+    const prevTitle = document.title;
+    document.title = `${invoiceNumber} — ${company.name || 'ATA-TEX'}`;
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.title = prevTitle;
+    };
+  }, [onClose, invoiceNumber, company.name]);
 
   const client = order.client;
 
@@ -41,7 +48,10 @@ export function PrintableInvoice({ order, company, totals, invoiceNumber, onClos
       <div className="print-sheet">
         <header className="inv-head">
           <div>
-            <div className="inv-co">{company.name || 'ATA-TEX'}</div>
+            <div className="inv-brand">
+              <Logo size={46} className="inv-logo" />
+              <span className="inv-co">{company.name || 'ATA-TEX'}</span>
+            </div>
             {company.address && <div>{company.address}</div>}
             {company.vat && <div>TVA {company.vat}</div>}
             {company.phone && <div>Tél. {company.phone}</div>}
@@ -146,7 +156,9 @@ const css = `
   font-family: 'Inter', system-ui, sans-serif;
 }
 .inv-head { display: flex; justify-content: space-between; gap: 24px; }
-.inv-co { font-family: 'Fraunces', Georgia, serif; font-size: 20px; font-weight: 600; color: #9a5a2c; margin-bottom: 3px; }
+.inv-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.inv-logo { color: #9a5a2c; }
+.inv-co { font-family: 'Fraunces', Georgia, serif; font-size: 21px; font-weight: 600; color: #1c1712; }
 .inv-head > div:last-child { color: #6b6051; }
 .inv-meta { text-align: right; }
 .inv-meta h1 { font-family: 'Fraunces', Georgia, serif; font-size: 20px; margin: 0 0 4px; }
