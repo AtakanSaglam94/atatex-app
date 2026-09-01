@@ -5,6 +5,9 @@ import { ShopLayout } from './ShopLayout';
 import { ShopHome } from './ShopHome';
 import { ShopProduct } from './ShopProduct';
 import { ShopCart } from './ShopCart';
+import { ShopCheckout } from './ShopCheckout';
+import { ShopConfirm } from './ShopConfirm';
+import { ShopLegal } from './ShopLegal';
 import './shop.css';
 
 export function ShopApp() {
@@ -17,6 +20,9 @@ export function ShopApp() {
               <Route path="/" element={<ShopHome />} />
               <Route path="/produit/:id" element={<ShopProduct />} />
               <Route path="/panier" element={<ShopCart />} />
+              <Route path="/commander" element={<ShopCheckout />} />
+              <Route path="/commande-confirmee" element={<ShopConfirm />} />
+              <Route path="/:slug" element={<ShopLegal />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </ErrorBoundary>

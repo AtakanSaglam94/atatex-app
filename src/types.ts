@@ -5,6 +5,8 @@ export type ProductUnit = 'm' | 'piece' | 'paquet_100' | 'kit';
 export type ConfectionCategory = 'rideau_voilage' | 'tenture';
 export type OrderStatus = 'recue' | 'fabrication' | 'pret' | 'termine' | 'annule';
 export type OrderFulfillment = 'retrait' | 'livraison';
+export type OrderChannel = 'magasin' | 'web';
+export type PaymentStatus = 'manuel' | 'en_attente' | 'paye';
 export type DiscountKind = 'none' | 'montant' | 'pourcent';
 export type OrderItemKind = 'produit' | 'service' | 'libre';
 export type ClientType = 'particulier' | 'professionnel';
@@ -30,6 +32,8 @@ export interface Company {
   invoice_terms: string;
   google_review_url: string;
   website_url: string;
+  shipping_fee_home: number;
+  free_shipping_threshold: number | null;
   updated_at: string;
 }
 
@@ -173,6 +177,10 @@ export interface Order {
   fulfillment: OrderFulfillment;
   pickup_point_id: string | null;
   bank_transfer: boolean;
+  channel: OrderChannel;
+  shipping_fee: number;
+  payment_status: PaymentStatus;
+  customer_message: string;
   discount_type: DiscountKind;
   discount_value: number;
   round_total: boolean;

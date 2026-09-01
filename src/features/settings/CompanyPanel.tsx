@@ -19,13 +19,22 @@ export function CompanyPanel() {
     invoice_terms: company?.invoice_terms ?? '',
     google_review_url: company?.google_review_url ?? '',
     website_url: company?.website_url ?? '',
+    shipping_fee_home: company?.shipping_fee_home ?? 0,
+    free_shipping_threshold:
+      company?.free_shipping_threshold == null ? '' : company.free_shipping_threshold,
   }));
   const [busy, setBusy] = useState(false);
   const set = (k: keyof typeof f, v: string | number) => setF((s) => ({ ...s, [k]: v }));
 
   async function save() {
     setBusy(true);
-    const { error } = await supabase.from('company').update({ ...f }).eq('id', 1);
+    const payload = {
+      ...f,
+      shipping_fee_home: Number(f.shipping_fee_home) || 0,
+      free_shipping_threshold:
+        f.free_shipping_threshold === '' ? null : Number(f.free_shipping_threshold) || null,
+    };
+    const { error } = await supabase.from('company').update(payload).eq('id', 1);
     setBusy(false);
     if (error) toast.error(error.message);
     else toast.ok('Informations enregistrées.');
@@ -100,6 +109,34 @@ export function CompanyPanel() {
           />
         </div>
       </div>
+      <h3 style={{ fontSize: 14, margin: '20px 0 4px' }}>Boutique en ligne — livraison</h3>
+      <div className="field-row">
+        <div className="field">
+          <label>Frais de livraison à domicile (€ TTC)</label>
+          <input
+            type="number"
+            step="0.01"
+            min={0}
+            value={f.shipping_fee_home}
+            onChange={(e) => set('shipping_fee_home', parseFloat(e.target.value) || 0)}
+          />
+        </div>
+        <div className="field">
+          <label>Livraison offerte à partir de (€ TTC)</label>
+          <input
+            type="number"
+            step="0.01"
+            min={0}
+            placeholder="Jamais"
+            value={f.free_shipping_threshold}
+            onChange={(e) =>
+              set('free_shipping_threshold', e.target.value === '' ? '' : parseFloat(e.target.value) || 0)
+            }
+          />
+          <div className="hint">Laisser vide pour ne jamais offrir la livraison.</div>
+        </div>
+      </div>
+
       <button className="btn btn--primary" onClick={save} disabled={busy}>
         {busy ? 'Enregistrement…' : 'Enregistrer'}
       </button>

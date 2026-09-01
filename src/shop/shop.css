@@ -146,3 +146,13 @@
   font-size: 12.5px;
 }
 .shop-footer a { color: var(--ink-soft); }
+
+.shop-legal h3 { font-size: 15px; margin: 20px 0 6px; font-family: var(--font-display); }
+.shop-legal p { margin: 0 0 10px; color: var(--ink-soft); }
+.shop-legal a { color: var(--accent); }
+
+.shop-checkout-grid { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 30px; }
+@media (max-width: 720px) {
+  .shop-product { grid-template-columns: 1fr; }
+  .shop-checkout-grid { grid-template-columns: 1fr; }
+}

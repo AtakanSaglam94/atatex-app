@@ -119,12 +119,23 @@ export function OrdersPage() {
                     discountValue: o.discount_value,
                     roundTotal: o.round_total,
                     depositAmount: o.deposit_amount,
+                    shippingFee: o.shipping_fee,
                     vatRate,
                   });
                   const paid = t.balanceDue <= 0;
                   return (
                     <tr key={o.id} className="clickable" onClick={() => setViewing(o)}>
-                      <td className="mono">{o.order_number}</td>
+                      <td className="mono">
+                        {o.order_number}
+                        {o.channel === 'web' && (
+                          <span
+                            className="badge badge--partial"
+                            style={{ marginLeft: 6, fontSize: 10 }}
+                          >
+                            web
+                          </span>
+                        )}
+                      </td>
                       <td>{o.client?.name ?? 'Client supprimé'}</td>
                       <td>{fmtDate(o.order_date)}</td>
                       <td>

@@ -24,9 +24,13 @@ export function ShopLayout({ children }: { children: ReactNode }) {
       <main className="shop-main">{children}</main>
 
       <footer className="shop-footer">
-        ATA-TEX — Rideaux, voilages, tentures & confection sur mesure · Bruxelles
+        ATA-TEX — Rideaux, voilages, tentures &amp; confection sur mesure · Bruxelles
         <br />
-        <Link to="/">Boutique</Link> · <a href="mailto:commande@ata-tex.be">commande@ata-tex.be</a>
+        <a href="mailto:commande@ata-tex.be">commande@ata-tex.be</a>
+        <br />
+        <Link to="/cgv">CGV</Link> · <Link to="/mentions-legales">Mentions légales</Link> ·{' '}
+        <Link to="/confidentialite">Confidentialité</Link> ·{' '}
+        <Link to="/retractation">Rétractation</Link>
       </footer>
     </div>
   );

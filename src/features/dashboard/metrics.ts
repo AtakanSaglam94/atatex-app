@@ -98,6 +98,7 @@ export function computeDashboard(
       discountValue: o.discount_value,
       roundTotal: o.round_total,
       depositAmount: o.deposit_amount,
+      shippingFee: o.shipping_fee,
       vatRate,
     });
 

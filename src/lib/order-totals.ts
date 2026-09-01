@@ -14,6 +14,8 @@ export interface OrderTotalsInput {
   roundTotal: boolean;
   depositAmount: number;
   vatRate: number;
+  /** frais de livraison TTC (commandes web) — ajoutés après remise */
+  shippingFee?: number;
 }
 
 export interface OrderTotals {
@@ -21,7 +23,9 @@ export interface OrderTotals {
   subtotalTTC: number;
   /** montant de la remise (≥ 0), appliquée sur le TTC */
   discountAmount: number;
-  /** TTC après remise, avant arrondi caisse */
+  /** frais de livraison TTC */
+  shippingFee: number;
+  /** TTC après remise + livraison, avant arrondi caisse */
   netTTC: number;
   /** ajustement d'arrondi caisse (peut être négatif) */
   roundingDelta: number;
@@ -41,6 +45,7 @@ export interface OrderTotals {
 export function computeOrderTotals(input: OrderTotalsInput): OrderTotals {
   const { items, discountType, discountValue, roundTotal, depositAmount, vatRate } = input;
   const rate = Number(vatRate) || 0;
+  const shippingFee = Math.max(Number(input.shippingFee) || 0, 0);
 
   const subtotalTTC = round2(items.reduce((s, it) => s + (Number(it.line_total) || 0), 0));
 
@@ -52,7 +57,7 @@ export function computeOrderTotals(input: OrderTotalsInput): OrderTotals {
     discountAmount = round2((subtotalTTC * pct) / 100);
   }
 
-  const netTTC = round2(subtotalTTC - discountAmount);
+  const netTTC = round2(subtotalTTC - discountAmount + shippingFee);
   const totalDue = roundTotal ? roundCash(netTTC) : netTTC;
   const roundingDelta = round2(totalDue - netTTC);
 
@@ -65,6 +70,7 @@ export function computeOrderTotals(input: OrderTotalsInput): OrderTotals {
   return {
     subtotalTTC,
     discountAmount,
+    shippingFee,
     netTTC,
     roundingDelta,
     totalDue,

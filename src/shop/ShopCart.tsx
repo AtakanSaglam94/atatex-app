@@ -86,14 +86,10 @@ export function ShopCart() {
         <Link to="/" className="btn">
           Continuer mes achats
         </Link>
-        <button className="btn btn--primary" disabled title="Disponible bientôt">
+        <Link to="/commander" className="btn btn--primary">
           Passer la commande
-        </button>
+        </Link>
       </div>
-      <p style={{ fontSize: 12.5, color: 'var(--ink-faint)', marginTop: 10 }}>
-        Le paiement en ligne (Bancontact) et le choix de livraison arrivent à la
-        prochaine étape du déploiement.
-      </p>
     </>
   );
 }

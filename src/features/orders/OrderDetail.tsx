@@ -52,6 +52,7 @@ export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
         discountValue: order.discount_value,
         roundTotal: order.round_total,
         depositAmount: order.deposit_amount,
+        shippingFee: order.shipping_fee,
         vatRate,
       }),
     [order, vatRate],
@@ -236,7 +237,26 @@ export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
           </>
         )}
         {order.invoice_number && <span className="badge badge--neutral">{order.invoice_number}</span>}
+        {order.channel === 'web' && <span className="badge badge--partial">Commande web</span>}
+        {order.payment_status === 'en_attente' && (
+          <span className="badge badge--unpaid">Paiement en attente</span>
+        )}
+        {order.payment_status === 'paye' && <span className="badge badge--paid">Payé en ligne</span>}
       </div>
+
+      {order.customer_message && (
+        <div
+          style={{
+            marginBottom: 12,
+            padding: '8px 12px',
+            background: 'var(--surface-2)',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: 13,
+          }}
+        >
+          <strong>Message du client :</strong> {order.customer_message}
+        </div>
+      )}
 
       <div style={{ color: 'var(--ink-soft)', fontSize: 13.5, marginBottom: 14 }}>
         {order.client?.name ?? 'Client supprimé'} · {fmtDate(order.order_date)}
@@ -344,6 +364,7 @@ export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
       >
         <Row label="Sous-total (TVA comprise)" value={eur(totals.subtotalTTC)} />
         {totals.discountAmount > 0 && <Row label="Remise" value={`− ${eur(totals.discountAmount)}`} />}
+        {totals.shippingFee > 0 && <Row label="Livraison" value={eur(totals.shippingFee)} />}
         {totals.roundingDelta !== 0 && (
           <Row label="Arrondi" value={eur(totals.roundingDelta)} />
         )}
