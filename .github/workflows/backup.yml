@@ -1,0 +1,53 @@
+name: Sauvegarde hebdomadaire
+
+# Chaque lundi 03:00 UTC + déclenchement manuel possible.
+on:
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Exporter les tables et déposer la sauvegarde
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SERVICE_KEY:-}" ]; then
+            echo "Secrets SUPABASE_URL / SUPABASE_SERVICE_KEY manquants." >&2
+            exit 1
+          fi
+
+          TABLES="company product_categories confection_types services pickup_points products stock_rolls clients orders order_items appointments expense_categories expenses email_templates email_log profiles"
+          STAMP=$(date -u +%Y-%m-%dT%H-%M)
+          echo "{\"app\":\"atatex\",\"version\":1,\"exported_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"tables\":{}}" > backup.json
+
+          for T in $TABLES; do
+            echo "→ $T"
+            curl -sf "$SUPABASE_URL/rest/v1/$T?select=*" \
+              -H "apikey: $SERVICE_KEY" -H "Authorization: Bearer $SERVICE_KEY" \
+              -o "table.json" || echo '[]' > table.json
+            jq --arg t "$T" --slurpfile rows table.json '.tables[$t] = $rows[0]' backup.json > tmp.json
+            mv tmp.json backup.json
+          done
+
+          BYTES=$(wc -c < backup.json)
+          echo "Sauvegarde : $BYTES octets"
+
+          curl -sf -X POST \
+            "$SUPABASE_URL/storage/v1/object/backups/auto/atatex-$STAMP.json" \
+            -H "Authorization: Bearer $SERVICE_KEY" \
+            -H "Content-Type: application/json" \
+            -H "x-upsert: true" \
+            --data-binary @backup.json
+          echo "Déposé : auto/atatex-$STAMP.json"
+
+      - name: Conserver aussi comme artefact (90 jours)
+        uses: actions/upload-artifact@v4
+        with:
+          name: atatex-backup
+          path: backup.json
+          retention-days: 90

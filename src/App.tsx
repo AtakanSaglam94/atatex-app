@@ -8,6 +8,7 @@ import { OrdersPage } from './features/orders/OrdersPage';
 import { StockPage } from './features/stock/StockPage';
 import { ClientsPage } from './features/clients/ClientsPage';
 import { CatalogPage } from './features/catalog/CatalogPage';
+import { AgendaPage } from './features/agenda/AgendaPage';
 import { InvoicesPage } from './features/invoices/InvoicesPage';
 import { AccountingPage } from './features/accounting/AccountingPage';
 import { SettingsPage } from './features/settings/SettingsPage';
@@ -38,6 +39,7 @@ function Gate() {
         <Route path="/stock" element={<StockPage />} />
         <Route path="/clients" element={<ClientsPage />} />
         <Route path="/catalogue" element={<CatalogPage />} />
+        <Route path="/agenda" element={<AgendaPage />} />
         <Route path="/factures" element={<InvoicesPage />} />
         <Route
           path="/comptabilite"

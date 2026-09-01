@@ -11,6 +11,7 @@ const NAV = [
   { to: '/stock', label: 'Stock', icon: 'stock' as const },
   { to: '/clients', label: 'Clients', icon: 'clients' as const },
   { to: '/catalogue', label: 'Catalogue', icon: 'catalog' as const },
+  { to: '/agenda', label: 'Agenda', icon: 'calendar' as const },
   { to: '/factures', label: 'Factures', icon: 'invoices' as const },
 ];
 
