@@ -236,13 +236,14 @@ export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
           gap: 4,
         }}
       >
-        <Row label="Sous-total HT" value={eur(totals.subtotalHT)} />
+        <Row label="Sous-total (TVA comprise)" value={eur(totals.subtotalTTC)} />
         {totals.discountAmount > 0 && <Row label="Remise" value={`− ${eur(totals.discountAmount)}`} />}
-        <Row label={`TVA (${num(vatRate)} %)`} value={eur(totals.tva)} />
         {totals.roundingDelta !== 0 && (
           <Row label="Arrondi" value={eur(totals.roundingDelta)} />
         )}
-        <Row label="Total TTC" value={eur(totals.totalDue)} strong />
+        <Row label="Total à payer (TTC)" value={eur(totals.totalDue)} strong />
+        <Row label="dont base HT" value={eur(totals.totalHT)} />
+        <Row label={`dont TVA ${num(vatRate)} %`} value={eur(totals.tva)} />
         {totals.deposit > 0 && <Row label="Acompte versé" value={`− ${eur(totals.deposit)}`} />}
         <Row label="Solde à payer" value={eur(totals.balanceDue)} strong />
       </div>

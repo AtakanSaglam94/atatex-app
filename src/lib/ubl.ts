@@ -44,31 +44,44 @@ interface UBLInput {
  */
 export function generateUBL({ order, company, totals, invoiceNumber }: UBLInput): string {
   const client = order.client;
+  const rate = totals.vatRate;
+  // les montants de l'app sont TTC ; l'UBL (EN 16931) veut des montants HT.
+  const toHT = (ttc: number) => Math.round((ttc / (1 + rate / 100)) * 100) / 100;
+
+  let sumLinesHT = 0;
   const lines = order.items
     .map((it, idx) => {
       const qty = Number(it.qty) || 1;
       const unitCode = it.unit === 'm' ? 'MTR' : 'C62';
-      const lineTotal = Number(it.line_total).toFixed(2);
-      const priceAmount = (qty ? Number(it.line_total) / qty : Number(it.line_total)).toFixed(2);
+      const lineHT = toHT(Number(it.line_total) || 0);
+      sumLinesHT += lineHT;
+      const priceAmount = (qty ? lineHT / qty : lineHT).toFixed(2);
       return `  <cac:InvoiceLine>
     <cbc:ID>${idx + 1}</cbc:ID>
     <cbc:InvoicedQuantity unitCode="${unitCode}">${qty}</cbc:InvoicedQuantity>
-    <cbc:LineExtensionAmount currencyID="EUR">${lineTotal}</cbc:LineExtensionAmount>
+    <cbc:LineExtensionAmount currencyID="EUR">${lineHT.toFixed(2)}</cbc:LineExtensionAmount>
     <cac:Item><cbc:Name>${esc(it.label)}</cbc:Name>
-      <cac:ClassifiedTaxCategory><cbc:ID>S</cbc:ID><cbc:Percent>${totals.vatRate}</cbc:Percent>
+      <cac:ClassifiedTaxCategory><cbc:ID>S</cbc:ID><cbc:Percent>${rate}</cbc:Percent>
         <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:ClassifiedTaxCategory></cac:Item>
     <cac:Price><cbc:PriceAmount currencyID="EUR">${priceAmount}</cbc:PriceAmount></cac:Price>
   </cac:InvoiceLine>`;
     })
     .join('\n');
 
+  sumLinesHT = Math.round(sumLinesHT * 100) / 100;
+  const allowanceHT = totals.discountAmount > 0 ? toHT(totals.discountAmount) : 0;
+  const taxExclusive = Math.round((sumLinesHT - allowanceHT) * 100) / 100;
+  const taxAmount = Math.round(taxExclusive * (rate / 100) * 100) / 100;
+  const taxInclusive = Math.round((taxExclusive + taxAmount) * 100) / 100;
+  const payable = Math.round((taxInclusive - totals.deposit + totals.roundingDelta) * 100) / 100;
+
   const allowance =
-    totals.discountAmount > 0
+    allowanceHT > 0
       ? `  <cac:AllowanceCharge>
     <cbc:ChargeIndicator>false</cbc:ChargeIndicator>
     <cbc:AllowanceChargeReason>Remise</cbc:AllowanceChargeReason>
-    <cbc:Amount currencyID="EUR">${totals.discountAmount.toFixed(2)}</cbc:Amount>
-    <cac:TaxCategory><cbc:ID>S</cbc:ID><cbc:Percent>${totals.vatRate}</cbc:Percent>
+    <cbc:Amount currencyID="EUR">${allowanceHT.toFixed(2)}</cbc:Amount>
+    <cac:TaxCategory><cbc:ID>S</cbc:ID><cbc:Percent>${rate}</cbc:Percent>
       <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:TaxCategory>
   </cac:AllowanceCharge>\n`
       : '';
@@ -109,22 +122,22 @@ export function generateUBL({ order, company, totals, invoiceNumber }: UBLInput)
     <cac:Contact><cbc:ElectronicMail>${esc(client?.email)}</cbc:ElectronicMail></cac:Contact>
   </cac:Party></cac:AccountingCustomerParty>
 ${allowance}  <cac:TaxTotal>
-    <cbc:TaxAmount currencyID="EUR">${totals.tva.toFixed(2)}</cbc:TaxAmount>
+    <cbc:TaxAmount currencyID="EUR">${taxAmount.toFixed(2)}</cbc:TaxAmount>
     <cac:TaxSubtotal>
-      <cbc:TaxableAmount currencyID="EUR">${totals.netHT.toFixed(2)}</cbc:TaxableAmount>
-      <cbc:TaxAmount currencyID="EUR">${totals.tva.toFixed(2)}</cbc:TaxAmount>
-      <cac:TaxCategory><cbc:ID>S</cbc:ID><cbc:Percent>${totals.vatRate}</cbc:Percent>
+      <cbc:TaxableAmount currencyID="EUR">${taxExclusive.toFixed(2)}</cbc:TaxableAmount>
+      <cbc:TaxAmount currencyID="EUR">${taxAmount.toFixed(2)}</cbc:TaxAmount>
+      <cac:TaxCategory><cbc:ID>S</cbc:ID><cbc:Percent>${rate}</cbc:Percent>
         <cac:TaxScheme><cbc:ID>VAT</cbc:ID></cac:TaxScheme></cac:TaxCategory>
     </cac:TaxSubtotal>
   </cac:TaxTotal>
   <cac:LegalMonetaryTotal>
-    <cbc:LineExtensionAmount currencyID="EUR">${totals.subtotalHT.toFixed(2)}</cbc:LineExtensionAmount>
-    <cbc:TaxExclusiveAmount currencyID="EUR">${totals.netHT.toFixed(2)}</cbc:TaxExclusiveAmount>
-    <cbc:TaxInclusiveAmount currencyID="EUR">${totals.ttc.toFixed(2)}</cbc:TaxInclusiveAmount>
-    <cbc:AllowanceTotalAmount currencyID="EUR">${totals.discountAmount.toFixed(2)}</cbc:AllowanceTotalAmount>
+    <cbc:LineExtensionAmount currencyID="EUR">${sumLinesHT.toFixed(2)}</cbc:LineExtensionAmount>
+    <cbc:TaxExclusiveAmount currencyID="EUR">${taxExclusive.toFixed(2)}</cbc:TaxExclusiveAmount>
+    <cbc:TaxInclusiveAmount currencyID="EUR">${taxInclusive.toFixed(2)}</cbc:TaxInclusiveAmount>
+    <cbc:AllowanceTotalAmount currencyID="EUR">${allowanceHT.toFixed(2)}</cbc:AllowanceTotalAmount>
     <cbc:PrepaidAmount currencyID="EUR">${totals.deposit.toFixed(2)}</cbc:PrepaidAmount>
     <cbc:PayableRoundingAmount currencyID="EUR">${totals.roundingDelta.toFixed(2)}</cbc:PayableRoundingAmount>
-    <cbc:PayableAmount currencyID="EUR">${totals.balanceDue.toFixed(2)}</cbc:PayableAmount>
+    <cbc:PayableAmount currencyID="EUR">${payable.toFixed(2)}</cbc:PayableAmount>
   </cac:LegalMonetaryTotal>
 ${lines}
 </Invoice>`;

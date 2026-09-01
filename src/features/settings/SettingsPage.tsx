@@ -7,6 +7,7 @@ import { ServicesPanel } from './ServicesPanel';
 import { PickupPointsPanel } from './PickupPointsPanel';
 import { EmailTemplatesPanel } from './EmailTemplatesPanel';
 import { UsersPanel } from './UsersPanel';
+import { BackupPanel } from './BackupPanel';
 
 const TABS = [
   { key: 'entreprise', label: 'Entreprise', el: <CompanyPanel /> },
@@ -16,6 +17,7 @@ const TABS = [
   { key: 'retrait', label: 'Points de retrait', el: <PickupPointsPanel /> },
   { key: 'emails', label: 'Emails', el: <EmailTemplatesPanel /> },
   { key: 'utilisateurs', label: 'Utilisateurs', el: <UsersPanel /> },
+  { key: 'sauvegardes', label: 'Sauvegardes', el: <BackupPanel /> },
 ] as const;
 
 export function SettingsPage() {

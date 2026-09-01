@@ -242,7 +242,7 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
           </select>
         </div>
         <div className="field">
-          <label>Prix de vente (€ / unité)</label>
+          <label>Prix de vente TTC (€ / unité)</label>
           <input
             type="number"
             step="0.01"
@@ -253,7 +253,7 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
         </div>
       </div>
       <div className="field">
-        <label>Prix de revient (€ / unité) — optionnel</label>
+        <label>Prix de revient HT (€ / unité) — optionnel</label>
         <input
           type="number"
           step="0.01"
@@ -261,7 +261,9 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
           value={f.cost_price || ''}
           onChange={(e) => setF({ ...f, cost_price: parseFloat(e.target.value) || 0 })}
         />
-        <div className="hint">Prix d'achat. Sert au calcul de la marge sur le tableau de bord.</div>
+        <div className="hint">
+          Prix d'achat hors TVA (montant net de la facture fournisseur). Sert au calcul de la marge.
+        </div>
       </div>
       <div className="field">
         <label>Quantité maximum par ligne de commande</label>

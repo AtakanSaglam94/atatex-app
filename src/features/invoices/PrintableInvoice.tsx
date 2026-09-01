@@ -77,8 +77,8 @@ export function PrintableInvoice({ order, company, totals, invoiceNumber, onClos
             <tr>
               <th>Désignation</th>
               <th className="r">Qté</th>
-              <th className="r">P.U.</th>
-              <th className="r">Montant</th>
+              <th className="r">P.U. TTC</th>
+              <th className="r">Montant TTC</th>
             </tr>
           </thead>
           <tbody>
@@ -106,16 +106,19 @@ export function PrintableInvoice({ order, company, totals, invoiceNumber, onClos
         </table>
 
         <div className="inv-totals">
-          <Row label="Sous-total HT" value={eur(totals.subtotalHT)} />
+          <Row label="Sous-total TVA comprise" value={eur(totals.subtotalTTC)} />
           {totals.discountAmount > 0 && (
             <Row label="Remise" value={`− ${eur(totals.discountAmount)}`} />
           )}
-          <Row label={`TVA ${num(totals.vatRate)} %`} value={eur(totals.tva)} />
           {totals.roundingDelta !== 0 && <Row label="Arrondi" value={eur(totals.roundingDelta)} />}
-          <Row label="Total à payer" value={eur(totals.totalDue)} strong />
+          <Row label="TOTAL À PAYER (TTC)" value={eur(totals.totalDue)} strong />
+          <div className="inv-vatbox">
+            <Row label={`Base hors TVA`} value={eur(totals.totalHT)} />
+            <Row label={`TVA ${num(totals.vatRate)} %`} value={eur(totals.tva)} />
+          </div>
           {totals.deposit > 0 && (
             <>
-              <Row label="Acompte versé" value={`− ${eur(totals.deposit)}`} />
+              <Row label="Acompte déjà versé" value={`− ${eur(totals.deposit)}`} />
               <Row label="Solde restant dû" value={eur(totals.balanceDue)} strong />
             </>
           )}
@@ -175,6 +178,8 @@ const css = `
 .inv-trow { display: flex; justify-content: space-between; padding: 4px 0; color: #6b6051; }
 .inv-trow.strong { color: #1c1712; font-weight: 600; font-size: 15px; border-top: 1.5px solid #1c1712; padding-top: 8px; margin-top: 4px; }
 .inv-trow .mono { font-variant-numeric: tabular-nums; }
+.inv-vatbox { margin: 6px 0; padding: 6px 10px; background: #f7f1e6; border-radius: 3px; font-size: 12px; }
+.inv-vatbox .inv-trow { padding: 2px 0; }
 .inv-foot { margin-top: 34px; padding-top: 14px; border-top: 1px solid #eadfce; color: #6b6051; font-size: 12px; }
 
 @media print {

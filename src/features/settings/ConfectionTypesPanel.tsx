@@ -33,7 +33,7 @@ export function ConfectionTypesPanel() {
         }
       >
         <div style={{ padding: '10px 16px', fontSize: 12.5, color: 'var(--ink-soft)' }}>
-          m à commander = <b>largeur × facteur + marge</b> · prix = (prix tissu + frais catégorie) × m
+          m à commander = <b>largeur × facteur + marge</b> · prix TTC = (prix tissu TTC + frais catégorie) × m
         </div>
         <div className="table-wrap">
           <table>
@@ -173,11 +173,11 @@ function ConfectionTypeEditor({ type, onClose }: { type: ConfectionType | null; 
       </div>
       <div className="field-row">
         <div className="field">
-          <label>Frais confection — rideau / voilage (€/m)</label>
+          <label>Frais confection TTC — rideau / voilage (€/m)</label>
           <input type="number" step="0.5" min={0} value={f.frais_rideau_voilage} onChange={(e) => setNum('frais_rideau_voilage', e.target.value)} />
         </div>
         <div className="field">
-          <label>Frais confection — tenture (€/m)</label>
+          <label>Frais confection TTC — tenture (€/m)</label>
           <input type="number" step="0.5" min={0} value={f.frais_tenture} onChange={(e) => setNum('frais_tenture', e.target.value)} />
         </div>
       </div>

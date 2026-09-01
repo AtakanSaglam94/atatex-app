@@ -432,8 +432,8 @@
     <p style="font-size: 0.86rem; color: var(--ink-soft); margin: 1rem 0 0;">
       Le métrage est arrondi à 2 décimales, puis le prix total est calculé sur ce
       métrage arrondi (le total affiché = métrage affiché × prix au mètre). La TVA
-      belge de 21 % est indiquée à titre indicatif ; elle s'applique sur la commande,
-      pas dans ce calcul.
+      belge de 21 % est déjà comprise dans ce prix (prix tissu et frais saisis TTC) ;
+      la base HT et la TVA sont rétro-calculées pour la facture et le comptable.
     </p>
   </div>
 
@@ -587,8 +587,8 @@
     }
 
     var r = calculerConfection(largeur, prix, cat, t);
-    var tva = round2(r.prixTotal * 0.21);
-    var ttc = round2(r.prixTotal + tva);
+    var ht = round2(r.prixTotal / 1.21);
+    var tva = round2(r.prixTotal - ht);
 
     slip.innerHTML =
       '<div class="slip-head">' +
@@ -626,19 +626,19 @@
         "</div>" +
 
         '<div class="result-row">' +
-          '<span class="rk">Prix de la confection <span style="font-weight:400;color:var(--ink-faint);font-family:Inter">(hors TVA)</span></span>' +
+          '<span class="rk">Prix de la confection <span style="font-weight:400;color:var(--ink-faint);font-family:Inter">(TVA comprise)</span></span>' +
           '<span class="rv">' + eur(r.prixTotal) + "</span>" +
         "</div>" +
         '<div class="calc-line">' +
           '<span class="expr">( ' + eur(r.prixTissu) + " + " + eur(r.frais) + " ) × " + num(r.metrage, 2) + " m = " + eur(r.prixTotal) + "</span>" +
         "</div>" +
         '<div class="result-row minor">' +
-          "<span class=\"rk\">TVA 21 % (indicatif)</span>" +
-          '<span class="rv">' + eur(tva) + "</span>" +
+          "<span class=\"rk\">dont base HT</span>" +
+          '<span class="rv">' + eur(ht) + "</span>" +
         "</div>" +
         '<div class="result-row minor">' +
-          "<span class=\"rk\">Total TTC (indicatif)</span>" +
-          '<span class="rv">' + eur(ttc) + "</span>" +
+          "<span class=\"rk\">dont TVA 21 %</span>" +
+          '<span class="rv">' + eur(tva) + "</span>" +
         "</div>" +
       "</div>";
   }

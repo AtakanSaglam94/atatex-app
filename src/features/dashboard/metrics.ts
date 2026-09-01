@@ -112,31 +112,32 @@ export function computeDashboard(
     const inYear = o.order_date.startsWith(yyyy);
 
     if (inMonth) {
-      caMonthHT += t.netHT;
-      caMonthTTC += t.ttc;
+      caMonthHT += t.totalHT;
+      caMonthTTC += t.totalDue;
       cogsMonth += cogs;
       tvaMonth += t.tva;
       acomptesMonth += t.deposit;
       nbOrdersMonth += 1;
       if (o.fulfillment === 'livraison') {
-        pickupAgg.set('Livraison', (pickupAgg.get('Livraison') ?? 0) + t.netHT);
+        pickupAgg.set('Livraison', (pickupAgg.get('Livraison') ?? 0) + t.totalHT);
       } else {
         const name = (o.pickup_point_id && pickupName.get(o.pickup_point_id)) || 'Retrait (à préciser)';
-        pickupAgg.set(name, (pickupAgg.get(name) ?? 0) + t.netHT);
+        pickupAgg.set(name, (pickupAgg.get(name) ?? 0) + t.totalHT);
       }
       for (const it of o.items) {
         if (it.is_confection && it.confection_type_label) {
+          const ht = (Number(it.line_total) || 0) / (1 + vatRate / 100);
           confAgg.set(
             it.confection_type_label,
-            (confAgg.get(it.confection_type_label) ?? 0) + Number(it.line_total || 0),
+            (confAgg.get(it.confection_type_label) ?? 0) + ht,
           );
         }
       }
     }
-    if (inPrevMonth) caPrevMonthHT += t.netHT;
+    if (inPrevMonth) caPrevMonthHT += t.totalHT;
     if (inYear) {
-      caYearHT += t.netHT;
-      clientAgg.set(o.client_id, (clientAgg.get(o.client_id) ?? 0) + t.netHT);
+      caYearHT += t.totalHT;
+      clientAgg.set(o.client_id, (clientAgg.get(o.client_id) ?? 0) + t.totalHT);
     }
 
     if (t.balanceDue > 0) {

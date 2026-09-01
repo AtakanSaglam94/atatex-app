@@ -118,7 +118,7 @@ function ServiceEditor({ service, onClose }: { service: Service | null; onClose:
         <input value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Prise de mesure, Livraison, Pose à domicile…" />
       </div>
       <div className="field">
-        <label>Prix (€)</label>
+        <label>Prix TTC (€)</label>
         <input
           type="number"
           step="0.01"
