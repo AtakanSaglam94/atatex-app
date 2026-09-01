@@ -7,9 +7,11 @@ import { useToast } from '@/lib/toast';
 import { eur } from '@/lib/money';
 import { computeOrderTotals } from '@/lib/order-totals';
 import { fmtDate } from '@/lib/format';
-import { buildInvoicePdf } from '@/lib/invoice-pdf';
+import { PrintableInvoice } from './PrintableInvoice';
 import { generateUBL, downloadFile } from '@/lib/ubl';
 import { assignInvoiceNumber } from '@/features/orders/invoiceNumber';
+import type { OrderTotals } from '@/lib/order-totals';
+import type { OrderWithRelations } from '@/types';
 
 type Filter = 'all' | 'unpaid' | 'paid';
 
@@ -20,6 +22,9 @@ export function InvoicesPage() {
   const vatRate = company?.vat_rate ?? 21;
   const [filter, setFilter] = useState<Filter>('all');
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [printing, setPrinting] = useState<
+    { order: OrderWithRelations; totals: OrderTotals; number: string } | null
+  >(null);
 
   const rows = useMemo(() => {
     return orders.map((o) => {
@@ -39,16 +44,14 @@ export function InvoicesPage() {
     filter === 'all' ? true : filter === 'paid' ? r.paid : !r.paid,
   );
 
-  async function pdf(orderId: string) {
+  async function openInvoice(orderId: string) {
     const row = rows.find((r) => r.o.id === orderId);
     if (!row || !company) return;
     setBusyId(orderId);
     const number = row.o.invoice_number ?? (await assignInvoiceNumber(orderId));
     setBusyId(null);
     if (!number) return toast.error('Numéro de facture impossible.');
-    (await buildInvoicePdf({ order: row.o, company, totals: row.t, invoiceNumber: number })).download(
-      `${number}.pdf`,
-    );
+    setPrinting({ order: row.o, totals: row.t, number });
     if (!row.o.invoice_number) reload();
   }
 
@@ -116,9 +119,9 @@ export function InvoicesPage() {
                       </button>
                       <button
                         className="btn btn--ghost btn--sm"
-                        onClick={() => pdf(o.id)}
+                        onClick={() => openInvoice(o.id)}
                         disabled={busyId === o.id}
-                        title="Facture PDF"
+                        title="Facture"
                       >
                         <Icon name="invoices" size={15} />
                       </button>
@@ -130,6 +133,16 @@ export function InvoicesPage() {
           </div>
         )}
       </Panel>
+
+      {printing && company && (
+        <PrintableInvoice
+          order={printing.order}
+          company={company}
+          totals={printing.totals}
+          invoiceNumber={printing.number}
+          onClose={() => setPrinting(null)}
+        />
+      )}
     </>
   );
 }

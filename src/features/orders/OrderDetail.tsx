@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Modal } from '@/components/Modal';
 import { Icon } from '@/components/Icon';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { useAuth } from '@/auth/AuthProvider';
 import { useData } from '@/data/DataProvider';
 import { useToast } from '@/lib/toast';
 import { supabase } from '@/lib/supabase';
@@ -16,7 +18,7 @@ import {
   isCancelled,
 } from '@/lib/format';
 import { generateUBL, downloadFile } from '@/lib/ubl';
-import { buildInvoicePdf } from '@/lib/invoice-pdf';
+import { PrintableInvoice } from '@/features/invoices/PrintableInvoice';
 import { assignInvoiceNumber } from './invoiceNumber';
 import { updateOrderStatus } from './saveOrder';
 import type { OrderWithRelations } from '@/types';
@@ -30,9 +32,12 @@ interface Props {
 
 export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
   const { company, pickupPoints } = useData();
+  const { isAdmin } = useAuth();
   const pickupPoint = pickupPoints.find((p) => p.id === order.pickup_point_id) ?? null;
   const toast = useToast();
   const [busy, setBusy] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [printNumber, setPrintNumber] = useState<string | null>(null);
   const vatRate = company?.vat_rate ?? 21;
 
   const totals = useMemo(
@@ -74,15 +79,24 @@ export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
     onChanged();
   }
 
-  async function makeInvoice() {
+  async function openInvoice() {
     setBusy(true);
     const number = order.invoice_number ?? (await assignInvoiceNumber(order.id));
     setBusy(false);
     if (!number) return toast.error('Numéro de facture impossible à générer.');
-    (await buildInvoicePdf({ order, company: company!, totals, invoiceNumber: number })).download(
-      `${number}.pdf`,
-    );
+    setPrintNumber(number);
     if (!order.invoice_number) onChanged();
+  }
+
+  async function deleteOrder() {
+    setConfirmDelete(false);
+    setBusy(true);
+    const { error } = await supabase.from('orders').delete().eq('id', order.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.ok('Commande supprimée.');
+    onClose();
+    onChanged();
   }
 
   function exportUbl() {
@@ -100,14 +114,21 @@ export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
       onClose={onClose}
       footer={
         <>
-          <button className="btn btn--ghost" onClick={onClose}>
-            Fermer
-          </button>
+          {isAdmin && (
+            <button
+              className="btn btn--danger"
+              onClick={() => setConfirmDelete(true)}
+              disabled={busy}
+              style={{ marginRight: 'auto' }}
+            >
+              <Icon name="trash" size={15} /> Supprimer
+            </button>
+          )}
           <button className="btn" onClick={exportUbl}>
             <Icon name="download" size={15} /> UBL / Peppol
           </button>
-          <button className="btn" onClick={makeInvoice} disabled={busy}>
-            <Icon name="invoices" size={15} /> Facture PDF
+          <button className="btn" onClick={openInvoice} disabled={busy}>
+            <Icon name="invoices" size={15} /> Facture
           </button>
           <button className="btn btn--primary" onClick={onEdit}>
             <Icon name="edit" size={15} /> Modifier
@@ -236,6 +257,26 @@ export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
         <div style={{ marginTop: 12, fontSize: 13, color: 'var(--ink-soft)' }}>
           <strong>Notes :</strong> {order.notes}
         </div>
+      )}
+
+      {printNumber && company && (
+        <PrintableInvoice
+          order={order}
+          company={company}
+          totals={totals}
+          invoiceNumber={printNumber}
+          onClose={() => setPrintNumber(null)}
+        />
+      )}
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Supprimer la commande"
+          message={`Supprimer définitivement la commande ${order.order_number} ? Cette action est irréversible. (Pour un simple problème, utilise plutôt « Annuler la commande ».)`}
+          danger
+          confirmLabel="Supprimer définitivement"
+          onConfirm={deleteOrder}
+          onCancel={() => setConfirmDelete(false)}
+        />
       )}
     </Modal>
   );

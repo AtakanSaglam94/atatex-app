@@ -13,7 +13,7 @@ export function EmailTemplatesPanel() {
       <p style={{ fontSize: 12.5, color: 'var(--ink-soft)', marginTop: 0 }}>
         Un email part automatiquement au client (adresse de sa fiche) à chaque changement de statut.
         Variables : <code>{'{client}'}</code>, <code>{'{numero}'}</code>, <code>{'{entreprise}'}</code>,{' '}
-        <code>{'{point}'}</code>, <code>{'{jour}'}</code> (point de retrait).
+        <code>{'{point}'}</code>, <code>{'{jour}'}</code>, <code>{'{adresse}'}</code> (point de retrait).
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {emailTemplates.map((t) => (

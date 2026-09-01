@@ -9,6 +9,3 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
-
-// Polices embarquées de pdfmake — pas de déclaration de types fournie
-declare module 'pdfmake/build/vfs_fonts';

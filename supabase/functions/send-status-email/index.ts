@@ -45,7 +45,7 @@ Deno.serve(async (req) => {
     const [{ data: order }, { data: tpl }, { data: company }] = await Promise.all([
       admin
         .from('orders')
-        .select('id, order_number, client:clients(name, email), pickup:pickup_points(name, day)')
+        .select('id, order_number, client:clients(name, email), pickup:pickup_points(name, day, address)')
         .eq('id', order_id)
         .single(),
       admin.from('email_templates').select('*').eq('template_key', template_key).single(),
@@ -71,7 +71,8 @@ Deno.serve(async (req) => {
       numero: order.order_number,
       entreprise: company?.name ?? 'ATA-TEX',
       point: pickup?.name ?? '',
-      jour: pickup?.day ?? '',
+      jour: pickup?.day ? ` (le ${pickup.day})` : '',
+      adresse: pickup?.address ?? '',
     };
     const subject = fill(tpl.subject, vars);
     const text = fill(tpl.body, vars);
