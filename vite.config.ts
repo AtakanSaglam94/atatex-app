@@ -13,13 +13,17 @@ import fs from 'node:fs';
 export default defineConfig(({ mode }) => {
   const isShop = mode === 'shop';
 
-  /** Renomme dist-shop/boutique.html → index.html pour la règle SPA de Netlify. */
+  /** Renomme <outDir>/boutique.html → index.html pour la règle SPA de Netlify. */
+  let resolvedOutDir = 'dist-shop';
   const renameShopEntry = {
     name: 'rename-shop-entry',
+    configResolved(cfg: { build: { outDir: string } }) {
+      resolvedOutDir = cfg.build.outDir;
+    },
     closeBundle() {
-      const dir = path.resolve(__dirname, 'dist-shop');
-      const src = path.join(dir, 'boutique.html');
-      if (fs.existsSync(src)) fs.renameSync(src, path.join(dir, 'index.html'));
+      const src = path.resolve(__dirname, resolvedOutDir, 'boutique.html');
+      if (fs.existsSync(src))
+        fs.renameSync(src, path.resolve(__dirname, resolvedOutDir, 'index.html'));
     },
   };
 

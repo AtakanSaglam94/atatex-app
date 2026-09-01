@@ -1,14 +1,21 @@
-# Ce dépôt alimente DEUX sites Netlify distincts :
-#   • gestion (privé)  → build "npm run build"       → publie "dist"
-#   • boutique (public) → build "npm run build:shop"  → publie "dist-shop"
-# La commande de build et le dossier publié sont donc réglés dans l'UI de
-# chaque site (Site settings → Build & deploy), PAS ici.
-# Ce fichier ne contient que ce qui est commun aux deux.
+# Ce dépôt alimente DEUX sites Netlify (même repo) :
+#   • app de gestion (privée)  → domaine *.netlify.app  (ou gestion.ata-tex.be)
+#   • boutique publique         → ata-tex.be
+#
+# scripts/build.mjs détecte le site (via SITE_NAME / URL) et lance la bonne
+# cible ; les deux publient "dist". Rien à régler dans l'UI Netlify hormis,
+# pour le site boutique, connecter le repo et ajouter le domaine ata-tex.be
+# (Netlify expose SITE_NAME et URL au build, ce qui suffit à la détection).
+# Au besoin, forcer avec la variable d'environnement BUILD_TARGET=shop.
+
+[build]
+  command = "node scripts/build.mjs"
+  publish = "dist"
 
 [build.environment]
   NODE_VERSION = "20"
 
-# SPA : toutes les routes servent index.html (présent dans dist/ ET dist-shop/)
+# SPA : toutes les routes servent index.html
 [[redirects]]
   from = "/*"
   to = "/index.html"
