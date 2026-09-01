@@ -3,6 +3,7 @@ import { Modal } from '@/components/Modal';
 import { useToast } from '@/lib/toast';
 import { supabase } from '@/lib/supabase';
 import { clientDisplayName } from '@/lib/format';
+import { ClientHistory } from './ClientHistory';
 import type { Client, ClientType } from '@/types';
 
 interface Props {
@@ -195,6 +196,13 @@ export function ClientEditor({ client, onClose, onSaved }: Props) {
         <label>Notes</label>
         <textarea value={f.notes} onChange={(e) => set('notes', e.target.value)} />
       </div>
+
+      {client && (
+        <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px dashed var(--line-strong)' }}>
+          <div className="label">Historique</div>
+          <ClientHistory clientId={client.id} />
+        </div>
+      )}
     </Modal>
   );
 }

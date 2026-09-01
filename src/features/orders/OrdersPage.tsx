@@ -16,14 +16,20 @@ export function OrdersPage() {
   const vatRate = company?.vat_rate ?? 21;
 
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
-  const [editing, setEditing] = useState<OrderWithRelations | null | 'new'>(null);
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all' | 'devis'>('all');
+  const [editing, setEditing] = useState<OrderWithRelations | null | 'new' | 'new-quote'>(null);
   const [viewing, setViewing] = useState<OrderWithRelations | null>(null);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return orders.filter((o) => {
-      if (statusFilter === 'all' ? o.status === 'annule' : o.status !== statusFilter) return false;
+      if (statusFilter === 'devis') {
+        if (!o.is_quote) return false;
+      } else if (o.is_quote) {
+        return false;
+      } else if (statusFilter === 'all' ? o.status === 'annule' : o.status !== statusFilter) {
+        return false;
+      }
       if (!q) return true;
       return (
         o.order_number.toLowerCase().includes(q) ||
@@ -40,9 +46,14 @@ export function OrdersPage() {
         title="Commandes"
         subtitle={`${orders.length} commande${orders.length > 1 ? 's' : ''}`}
         action={
-          <button className="btn btn--primary" onClick={() => setEditing('new')}>
-            <Icon name="plus" size={16} /> Nouvelle commande
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn" onClick={() => setEditing('new-quote')}>
+              <Icon name="plus" size={16} /> Devis
+            </button>
+            <button className="btn btn--primary" onClick={() => setEditing('new')}>
+              <Icon name="plus" size={16} /> Nouvelle commande
+            </button>
+          </div>
         }
       />
 
@@ -73,6 +84,12 @@ export function OrdersPage() {
                 {STATUS_LABEL[s]}
               </button>
             ))}
+            <button
+              className={'btn btn--sm' + (statusFilter === 'devis' ? ' btn--primary' : '')}
+              onClick={() => setStatusFilter('devis')}
+            >
+              Devis
+            </button>
           </div>
         </div>
 
@@ -110,9 +127,13 @@ export function OrdersPage() {
                       <td>{o.client?.name ?? 'Client supprimé'}</td>
                       <td>{fmtDate(o.order_date)}</td>
                       <td>
-                        <span className={`badge badge--${o.status}`}>
-                          {statusLabel(o.status, o.fulfillment)}
-                        </span>
+                        {o.is_quote ? (
+                          <span className="badge badge--recue">Devis</span>
+                        ) : (
+                          <span className={`badge badge--${o.status}`}>
+                            {statusLabel(o.status, o.fulfillment)}
+                          </span>
+                        )}
                       </td>
                       <td>
                         <span className={`badge badge--${paid ? 'paid' : t.deposit > 0 ? 'partial' : 'unpaid'}`}>
@@ -133,7 +154,8 @@ export function OrdersPage() {
 
       {editing && (
         <OrderEditor
-          existing={editing === 'new' ? null : editing}
+          existing={editing === 'new' || editing === 'new-quote' ? null : editing}
+          startAsQuote={editing === 'new-quote'}
           onClose={() => setEditing(null)}
           onSaved={async (id) => {
             setEditing(null);

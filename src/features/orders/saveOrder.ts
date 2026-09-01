@@ -15,6 +15,8 @@ export interface OrderDraft {
   client_id: string;
   order_date: string;
   status: OrderStatus;
+  is_quote: boolean;
+  quote_valid_until: string | null;
   fulfillment: OrderFulfillment;
   pickup_point_id: string | null;
   bank_transfer: boolean;
@@ -58,6 +60,8 @@ export async function saveOrder(
     client_id: draft.client_id,
     order_date: draft.order_date,
     status: draft.status,
+    is_quote: draft.is_quote,
+    quote_valid_until: draft.is_quote ? draft.quote_valid_until : null,
     fulfillment: draft.fulfillment,
     pickup_point_id: draft.fulfillment === 'retrait' ? draft.pickup_point_id : null,
     bank_transfer: draft.bank_transfer,
@@ -110,8 +114,8 @@ export async function saveOrder(
   const { error: itemsError } = await supabase.from('order_items').insert(rows);
   if (itemsError) return { ok: false, error: itemsError.message };
 
-  // Email de changement de statut (non bloquant)
-  if (draft.status !== previousStatus) {
+  // Email de changement de statut (non bloquant) — jamais pour un devis
+  if (!draft.is_quote && draft.status !== previousStatus) {
     const key = emailTemplateKeyFor(draft.status, draft.fulfillment);
     if (key) void sendStatusEmail(orderId!, key);
   }

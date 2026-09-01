@@ -90,7 +90,7 @@ export function computeDashboard(
   const delayCutoff = new Date(now.getTime() - 90 * 864e5);
 
   for (const o of orders) {
-    if (o.status === 'annule') continue; // annulée : exclue de tous les indicateurs
+    if (o.status === 'annule' || o.is_quote) continue; // annulée / devis : hors indicateurs
 
     const t = computeOrderTotals({
       items: o.items,

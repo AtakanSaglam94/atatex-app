@@ -74,7 +74,7 @@ export function computeAccounting(
   const catName = new Map(categories.map((c) => [c.id, c.name]));
 
   const sales: SaleRow[] = orders
-    .filter((o) => o.status !== 'annule' && inPeriod(o.order_date, period))
+    .filter((o) => o.status !== 'annule' && !o.is_quote && inPeriod(o.order_date, period))
     .map((o) => {
       const t = computeOrderTotals({
         items: o.items,

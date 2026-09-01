@@ -139,7 +139,7 @@ export function InvoicesPage() {
           order={printing.order}
           company={company}
           totals={printing.totals}
-          invoiceNumber={printing.number}
+          docNumber={printing.number}
           onClose={() => setPrinting(null)}
         />
       )}

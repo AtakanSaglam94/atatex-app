@@ -1,23 +1,41 @@
 import { PrintSheet } from '@/components/PrintSheet';
 import { Logo } from '@/components/Logo';
 import { eur, num } from '@/lib/money';
-import { fmtDate, clientDisplayName, clientAddressText } from '@/lib/format';
+import { fmtDate, clientDisplayName, clientAddressText, fulfillmentText } from '@/lib/format';
 import type { OrderTotals } from '@/lib/order-totals';
-import type { Company, OrderWithRelations } from '@/types';
+import type { Company, OrderWithRelations, PickupPoint } from '@/types';
+
+export type OrderDocKind = 'facture' | 'devis' | 'bon';
 
 interface Props {
   order: OrderWithRelations;
   company: Company;
   totals: OrderTotals;
-  invoiceNumber: string;
+  docNumber: string;
+  kind?: OrderDocKind;
+  pickupPoint?: PickupPoint | null;
   onClose: () => void;
 }
 
-export function PrintableInvoice({ order, company, totals, invoiceNumber, onClose }: Props) {
+const TITLES: Record<OrderDocKind, string> = {
+  facture: 'FACTURE',
+  devis: 'DEVIS',
+  bon: 'BON DE COMMANDE',
+};
+
+export function PrintableInvoice({
+  order,
+  company,
+  totals,
+  docNumber,
+  kind = 'facture',
+  pickupPoint,
+  onClose,
+}: Props) {
   const client = order.client;
 
   return (
-    <PrintSheet docTitle={`${invoiceNumber} — ${company.name || 'ATA-TEX'}`} onClose={onClose}>
+    <PrintSheet docTitle={`${docNumber} — ${company.name || 'ATA-TEX'}`} onClose={onClose}>
       <header className="inv-head">
         <div>
           <div className="ps-brand" style={{ marginBottom: 6 }}>
@@ -30,18 +48,26 @@ export function PrintableInvoice({ order, company, totals, invoiceNumber, onClos
           {company.email && <div className="ps-soft">{company.email}</div>}
         </div>
         <div className="inv-meta">
-          <h1>FACTURE</h1>
-          <div className="ps-soft">{invoiceNumber}</div>
+          <h1>{TITLES[kind]}</h1>
+          <div className="ps-soft">{docNumber}</div>
           <div className="ps-soft">Date : {fmtDate(order.order_date)}</div>
-          <div className="ps-soft">Commande : {order.order_number}</div>
+          {kind === 'devis' && order.quote_valid_until && (
+            <div className="ps-soft">Valable jusqu'au {fmtDate(order.quote_valid_until)}</div>
+          )}
+          {kind !== 'devis' && <div className="ps-soft">Commande : {order.order_number}</div>}
         </div>
       </header>
 
       <section className="inv-to">
-        <div className="inv-label">Facturé à</div>
+        <div className="inv-label">{kind === 'facture' ? 'Facturé à' : 'Client'}</div>
         <div className="inv-client">{client ? clientDisplayName(client) : 'Client'}</div>
         {client && clientAddressText(client) && <div>{clientAddressText(client)}</div>}
         {client?.vat && <div>TVA {client.vat}</div>}
+        {kind !== 'devis' && (
+          <div className="ps-soft" style={{ marginTop: 4 }}>
+            {fulfillmentText(order.fulfillment, pickupPoint ?? null)}
+          </div>
+        )}
       </section>
 
       <table className="ps-table" style={{ marginBottom: 18 }}>
@@ -100,10 +126,23 @@ export function PrintableInvoice({ order, company, totals, invoiceNumber, onClos
         )}
       </div>
 
-      <footer className="inv-foot">
-        <div className="ps-soft">
-          {company.invoice_terms || 'Paiement à réception de la facture.'}
+      {order.notes && kind === 'bon' && (
+        <div className="ps-soft" style={{ marginTop: 12, fontSize: 12 }}>
+          <strong>Note :</strong> {order.notes}
         </div>
+      )}
+
+      <footer className="inv-foot">
+        {kind === 'devis' ? (
+          <div className="ps-soft">
+            Devis sans engagement. Prix TVA comprise. Pour confirmer, contactez-nous ou
+            répondez à cet email.
+          </div>
+        ) : (
+          <div className="ps-soft">
+            {company.invoice_terms || 'Paiement à réception de la facture.'}
+          </div>
+        )}
         {company.iban && <div className="ps-soft">Paiement par virement : {company.iban}</div>}
       </footer>
 

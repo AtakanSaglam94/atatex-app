@@ -166,6 +166,8 @@ export interface Order {
   client_id: string;
   order_date: string;
   status: OrderStatus;
+  is_quote: boolean;
+  quote_valid_until: string | null;
   fulfillment: OrderFulfillment;
   pickup_point_id: string | null;
   bank_transfer: boolean;
@@ -213,6 +215,23 @@ export interface EmailLogEntry {
   to_email: string;
   status: 'pending' | 'sent' | 'error';
   error: string | null;
+  created_at: string;
+}
+
+export type AppointmentKind = 'mesure' | 'pose' | 'livraison' | 'rdv' | 'autre';
+
+export interface Appointment {
+  id: string;
+  kind: AppointmentKind;
+  title: string;
+  starts_at: string;
+  duration_min: number;
+  client_id: string | null;
+  order_id: string | null;
+  location: string;
+  notes: string;
+  done: boolean;
+  created_by: string | null;
   created_at: string;
 }
 

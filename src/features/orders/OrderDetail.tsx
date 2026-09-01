@@ -39,7 +39,9 @@ export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [printNumber, setPrintNumber] = useState<string | null>(null);
+  const [print, setPrint] = useState<{ number: string; kind: 'facture' | 'devis' | 'bon' } | null>(
+    null,
+  );
   const vatRate = company?.vat_rate ?? 21;
 
   const totals = useMemo(
@@ -86,8 +88,62 @@ export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
     const number = order.invoice_number ?? (await assignInvoiceNumber(order.id));
     setBusy(false);
     if (!number) return toast.error('Numéro de facture impossible à générer.');
-    setPrintNumber(number);
+    setPrint({ number, kind: 'facture' });
     if (!order.invoice_number) onChanged();
+  }
+
+  async function convertToOrder() {
+    setBusy(true);
+    const { error } = await supabase
+      .from('orders')
+      .update({ is_quote: false, quote_valid_until: null, status: 'recue' })
+      .eq('id', order.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    // email « commande reçue » (non bloquant)
+    void updateOrderStatus(order.id, 'recue', order.fulfillment);
+    toast.ok('Devis converti en commande — email envoyé au client.');
+    onChanged();
+  }
+
+  async function duplicate() {
+    setBusy(true);
+    const { data: newOrder, error } = await supabase
+      .from('orders')
+      .insert({
+        client_id: order.client_id,
+        order_date: new Date().toISOString().slice(0, 10),
+        status: 'recue',
+        is_quote: order.is_quote,
+        fulfillment: order.fulfillment,
+        pickup_point_id: order.pickup_point_id,
+        bank_transfer: order.bank_transfer,
+        discount_type: order.discount_type,
+        discount_value: order.discount_value,
+        round_total: order.round_total,
+        deposit_amount: 0,
+        notes: order.notes,
+      })
+      .select('id')
+      .single();
+    if (error || !newOrder) {
+      setBusy(false);
+      return toast.error(error?.message ?? 'Duplication impossible.');
+    }
+    const rows = order.items.map((it, i) => {
+      const copy: Record<string, unknown> = { ...it };
+      delete copy.id;
+      delete copy.created_at;
+      copy.order_id = newOrder.id;
+      copy.position = i;
+      return copy;
+    });
+    const { error: e2 } = await supabase.from('order_items').insert(rows);
+    setBusy(false);
+    if (e2) return toast.error(e2.message);
+    toast.ok('Commande dupliquée.');
+    onChanged();
+    onClose();
   }
 
   async function deleteOrder() {
@@ -112,7 +168,7 @@ export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
 
   return (
     <Modal
-      title={order.order_number}
+      title={`${order.is_quote ? 'Devis' : 'Commande'} ${order.order_number}`}
       onClose={onClose}
       footer={
         <>
@@ -126,12 +182,37 @@ export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
               <Icon name="trash" size={15} /> Supprimer
             </button>
           )}
-          <button className="btn" onClick={exportUbl}>
-            <Icon name="download" size={15} /> UBL / Peppol
+          <button className="btn btn--ghost btn--sm" onClick={duplicate} disabled={busy} title="Dupliquer">
+            <Icon name="copy" size={15} /> Dupliquer
           </button>
-          <button className="btn" onClick={openInvoice} disabled={busy}>
-            <Icon name="invoices" size={15} /> Facture
-          </button>
+          {order.is_quote ? (
+            <>
+              <button
+                className="btn"
+                onClick={() => setPrint({ number: order.order_number, kind: 'devis' })}
+              >
+                <Icon name="invoices" size={15} /> Devis PDF
+              </button>
+              <button className="btn btn--primary" onClick={convertToOrder} disabled={busy}>
+                <Icon name="check" size={15} /> Convertir en commande
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="btn" onClick={exportUbl}>
+                <Icon name="download" size={15} /> UBL
+              </button>
+              <button
+                className="btn"
+                onClick={() => setPrint({ number: order.order_number, kind: 'bon' })}
+              >
+                <Icon name="invoices" size={15} /> Bon
+              </button>
+              <button className="btn" onClick={openInvoice} disabled={busy}>
+                <Icon name="invoices" size={15} /> Facture
+              </button>
+            </>
+          )}
           <button className="btn btn--primary" onClick={onEdit}>
             <Icon name="edit" size={15} /> Modifier
           </button>
@@ -139,12 +220,20 @@ export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
       }
     >
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-        <span className={`badge badge--${order.status}`}>
-          {statusLabel(order.status, order.fulfillment)}
-        </span>
-        <span className={`badge badge--${paymentBadge}`}>{paymentLabel}</span>
-        {order.bank_transfer && totals.balanceDue > 0 && (
-          <span className="badge badge--unpaid">Virement à vérifier</span>
+        {order.is_quote ? (
+          <span className="badge badge--recue">
+            Devis{order.quote_valid_until ? ` — valable jusqu'au ${fmtDate(order.quote_valid_until)}` : ''}
+          </span>
+        ) : (
+          <>
+            <span className={`badge badge--${order.status}`}>
+              {statusLabel(order.status, order.fulfillment)}
+            </span>
+            <span className={`badge badge--${paymentBadge}`}>{paymentLabel}</span>
+            {order.bank_transfer && totals.balanceDue > 0 && (
+              <span className="badge badge--unpaid">Virement à vérifier</span>
+            )}
+          </>
         )}
         {order.invoice_number && <span className="badge badge--neutral">{order.invoice_number}</span>}
       </div>
@@ -157,7 +246,21 @@ export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
       </div>
 
       {/* progression de statut */}
-      {isCancelled(order.status) ? (
+      {order.is_quote ? (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: '10px 12px',
+            background: 'var(--warn-weak)',
+            color: 'var(--warn)',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: 13,
+          }}
+        >
+          Devis en attente de confirmation. Utilise « Convertir en commande » quand le
+          client valide (un email de confirmation partira, et le rouleau sera décompté).
+        </div>
+      ) : isCancelled(order.status) ? (
         <div
           style={{
             marginBottom: 16,
@@ -263,13 +366,15 @@ export function OrderDetail({ order, onEdit, onClose, onChanged }: Props) {
         </div>
       )}
 
-      {printNumber && company && (
+      {print && company && (
         <PrintableInvoice
           order={order}
           company={company}
           totals={totals}
-          invoiceNumber={printNumber}
-          onClose={() => setPrintNumber(null)}
+          docNumber={print.number}
+          kind={print.kind}
+          pickupPoint={pickupPoint}
+          onClose={() => setPrint(null)}
         />
       )}
       {confirmDelete && (

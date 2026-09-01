@@ -5,7 +5,7 @@ import type { OrderWithRelations, Product, StockRoll } from '@/types';
 export function rollConsumption(orders: OrderWithRelations[]): Map<string, number> {
   const m = new Map<string, number>();
   for (const o of orders) {
-    if (o.status === 'annule') continue;
+    if (o.status === 'annule' || o.is_quote) continue;
     for (const it of o.items) {
       if (it.roll_id && it.metrage != null) {
         m.set(it.roll_id, (m.get(it.roll_id) ?? 0) + (Number(it.metrage) || 0));

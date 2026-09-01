@@ -31,11 +31,12 @@ import { saveOrder, type OrderDraft } from './saveOrder';
 
 interface Props {
   existing: OrderWithRelations | null;
+  startAsQuote?: boolean;
   onClose: () => void;
   onSaved: (orderId: string) => void;
 }
 
-export function OrderEditor({ existing, onClose, onSaved }: Props) {
+export function OrderEditor({ existing, startAsQuote = false, onClose, onSaved }: Props) {
   const { clients, products, services, confectionTypes, categories, pickupPoints, company } = useData();
   const toast = useToast();
   const vatRate = company?.vat_rate ?? 21;
@@ -47,6 +48,8 @@ export function OrderEditor({ existing, onClose, onSaved }: Props) {
           client_id: existing.client_id,
           order_date: existing.order_date,
           status: existing.status,
+          is_quote: existing.is_quote,
+          quote_valid_until: existing.quote_valid_until,
           fulfillment: existing.fulfillment,
           pickup_point_id: existing.pickup_point_id,
           bank_transfer: existing.bank_transfer,
@@ -62,6 +65,8 @@ export function OrderEditor({ existing, onClose, onSaved }: Props) {
           client_id: '',
           order_date: todayISO(),
           status: 'recue',
+          is_quote: startAsQuote,
+          quote_valid_until: null,
           fulfillment: 'retrait',
           pickup_point_id: pickupPoints[0]?.id ?? null,
           bank_transfer: false,
@@ -122,7 +127,8 @@ export function OrderEditor({ existing, onClose, onSaved }: Props) {
       setError(res.error ?? 'Enregistrement impossible.');
       return;
     }
-    toast.ok(existing ? 'Commande mise à jour.' : 'Commande créée.');
+    const w = draft.is_quote ? 'Devis' : 'Commande';
+    toast.ok(existing ? `${w} mis${draft.is_quote ? '' : 'e'} à jour.` : `${w} créé${draft.is_quote ? '' : 'e'}.`);
     onSaved(res.orderId!);
   }
 
@@ -138,7 +144,13 @@ export function OrderEditor({ existing, onClose, onSaved }: Props) {
   return (
     <>
     <Modal
-      title={existing ? `Commande ${existing.order_number}` : 'Nouvelle commande'}
+      title={
+        existing
+          ? `${existing.is_quote ? 'Devis' : 'Commande'} ${existing.order_number}`
+          : draft.is_quote
+            ? 'Nouveau devis'
+            : 'Nouvelle commande'
+      }
       size="lg"
       onClose={onClose}
       footer={
@@ -150,7 +162,13 @@ export function OrderEditor({ existing, onClose, onSaved }: Props) {
             <Icon name="copy" size={16} /> Copier le montant
           </button>
           <button className="btn btn--primary" onClick={submit} disabled={busy}>
-            {busy ? 'Enregistrement…' : existing ? 'Enregistrer' : 'Créer la commande'}
+            {busy
+              ? 'Enregistrement…'
+              : existing
+                ? 'Enregistrer'
+                : draft.is_quote
+                  ? 'Créer le devis'
+                  : 'Créer la commande'}
           </button>
         </>
       }
@@ -193,6 +211,39 @@ export function OrderEditor({ existing, onClose, onSaved }: Props) {
             onChange={(e) => set('order_date', e.target.value)}
           />
         </div>
+      </div>
+
+      <div
+        style={{
+          display: 'flex',
+          gap: 14,
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          margin: '4px 0 12px',
+          padding: '8px 10px',
+          background: draft.is_quote ? 'var(--warn-weak)' : 'var(--surface-2)',
+          borderRadius: 'var(--radius-sm)',
+        }}
+      >
+        <label style={{ display: 'flex', gap: 7, alignItems: 'center', fontSize: 13.5 }}>
+          <input
+            type="checkbox"
+            checked={draft.is_quote}
+            onChange={(e) => set('is_quote', e.target.checked)}
+          />
+          C'est un <strong>devis</strong> (pas encore confirmé)
+        </label>
+        {draft.is_quote && (
+          <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12.5 }}>
+            Valable jusqu'au
+            <input
+              type="date"
+              value={draft.quote_valid_until ?? ''}
+              onChange={(e) => set('quote_valid_until', e.target.value || null)}
+              style={{ minHeight: 34, padding: '4px 8px' }}
+            />
+          </label>
+        )}
       </div>
 
       <div className="field-row">
@@ -325,7 +376,7 @@ export function OrderEditor({ existing, onClose, onSaved }: Props) {
           />
         </div>
         <div className="field">
-          <label>Acompte déjà versé (€)</label>
+          <label>Acompte versé (€)</label>
           <input
             type="number"
             min={0}
@@ -333,6 +384,29 @@ export function OrderEditor({ existing, onClose, onSaved }: Props) {
             value={draft.deposit_amount || ''}
             onChange={(e) => set('deposit_amount', parseFloat(e.target.value) || 0)}
           />
+          <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+            {[30, 40, 50].map((pct) => (
+              <button
+                key={pct}
+                type="button"
+                className="btn btn--sm btn--ghost"
+                style={{ padding: '3px 8px', fontSize: 12 }}
+                onClick={() => set('deposit_amount', Math.round((totals.totalDue * pct) / 100))}
+              >
+                {pct} %
+              </button>
+            ))}
+            {draft.deposit_amount > 0 && (
+              <button
+                type="button"
+                className="btn btn--sm btn--ghost"
+                style={{ padding: '3px 8px', fontSize: 12 }}
+                onClick={() => set('deposit_amount', 0)}
+              >
+                effacer
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
