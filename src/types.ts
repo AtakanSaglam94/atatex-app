@@ -76,6 +76,8 @@ export interface Product {
   max_qty_per_line: number | null;
   largeur_min: number | null;
   largeur_max: number | null;
+  hauteur_min: number | null;
+  hauteur_max: number | null;
   confection_category: ConfectionCategory | null;
   photo_url: string;
   photo_urls: string[];

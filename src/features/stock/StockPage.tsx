@@ -4,6 +4,7 @@ import { Icon } from '@/components/Icon';
 import { Modal } from '@/components/Modal';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { useData } from '@/data/DataProvider';
+import { useOrders } from '@/data/useOrders';
 import { useToast } from '@/lib/toast';
 import { supabase } from '@/lib/supabase';
 import { eur } from '@/lib/money';
@@ -13,25 +14,47 @@ import type { Product, ProductUnit } from '@/types';
 
 export function StockPage() {
   const { products, categories } = useData();
+  const { orders } = useOrders();
   const toast = useToast();
   const [search, setSearch] = useState('');
+  const [showArchived, setShowArchived] = useState(false);
   const [editing, setEditing] = useState<Product | 'new' | null>(null);
   const [deleting, setDeleting] = useState<Product | null>(null);
+
+  const usedProductIds = useMemo(
+    () => new Set(orders.flatMap((o) => o.items.map((it) => it.product_id))),
+    [orders],
+  );
+  const archivedCount = products.filter((p) => !p.active).length;
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return [...products]
+      .filter((p) => (showArchived ? true : p.active))
       .sort((a, b) => a.name.localeCompare(b.name))
       .filter((p) => !q || p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
-  }, [products, search]);
+  }, [products, search, showArchived]);
 
   const catName = (id: string | null) => categories.find((c) => c.id === id)?.name ?? '—';
 
   async function remove(p: Product) {
-    const { error } = await supabase.from('products').update({ active: false }).eq('id', p.id);
     setDeleting(null);
+    if (usedProductIds.has(p.id)) {
+      // produit utilisé dans des commandes : on archive pour ne pas casser l'historique
+      const { error } = await supabase.from('products').update({ active: false }).eq('id', p.id);
+      if (error) toast.error(error.message);
+      else toast.ok('Produit archivé (il figure dans des commandes existantes).');
+    } else {
+      const { error } = await supabase.from('products').delete().eq('id', p.id);
+      if (error) toast.error(error.message);
+      else toast.ok('Produit supprimé.');
+    }
+  }
+
+  async function unarchive(p: Product) {
+    const { error } = await supabase.from('products').update({ active: true }).eq('id', p.id);
     if (error) toast.error(error.message);
-    else toast.ok('Produit retiré du catalogue.');
+    else toast.ok('Produit réactivé.');
   }
 
   return (
@@ -46,8 +69,18 @@ export function StockPage() {
         }
       />
       <Panel>
-        <div style={{ padding: 12 }}>
+        <div style={{ padding: 12, display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
           <SearchInput value={search} onChange={setSearch} placeholder="Nom ou référence…" />
+          {archivedCount > 0 && (
+            <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 13, color: 'var(--ink-soft)' }}>
+              <input
+                type="checkbox"
+                checked={showArchived}
+                onChange={(e) => setShowArchived(e.target.checked)}
+              />
+              Voir les archivés ({archivedCount})
+            </label>
+          )}
         </div>
         {filtered.length === 0 ? (
           <EmptyState message="Aucun produit." />
@@ -85,14 +118,26 @@ export function StockPage() {
                         {p.stock} {p.unit === 'm' ? 'm' : ''}
                       </span>
                     </td>
-                    <td style={{ textAlign: 'right' }}>
+                    <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                      {!p.active && (
+                        <button
+                          className="btn btn--ghost btn--sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void unarchive(p);
+                          }}
+                          title="Réactiver"
+                        >
+                          <Icon name="check" size={16} />
+                        </button>
+                      )}
                       <button
                         className="btn btn--ghost btn--sm"
                         onClick={(e) => {
                           e.stopPropagation();
                           setDeleting(p);
                         }}
-                        aria-label="Retirer"
+                        aria-label="Supprimer"
                       >
                         <Icon name="trash" size={16} />
                       </button>
@@ -110,10 +155,14 @@ export function StockPage() {
       )}
       {deleting && (
         <ConfirmDialog
-          title="Retirer le produit"
-          message={`Retirer « ${deleting.name} » du catalogue ? Les commandes existantes ne changent pas.`}
+          title="Supprimer le produit"
+          message={
+            usedProductIds.has(deleting.id)
+              ? `« ${deleting.name} » figure dans des commandes : il sera archivé (masqué) sans casser l'historique. Continuer ?`
+              : `Supprimer définitivement « ${deleting.name} » ?`
+          }
           danger
-          confirmLabel="Retirer"
+          confirmLabel={usedProductIds.has(deleting.id) ? 'Archiver' : 'Supprimer'}
           onConfirm={() => remove(deleting)}
           onCancel={() => setDeleting(null)}
         />
@@ -137,6 +186,8 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
     max_qty_per_line: product?.max_qty_per_line ?? ('' as number | ''),
     largeur_min: product?.largeur_min ?? ('' as number | ''),
     largeur_max: product?.largeur_max ?? ('' as number | ''),
+    hauteur_min: product?.hauteur_min ?? ('' as number | ''),
+    hauteur_max: product?.hauteur_max ?? ('' as number | ''),
     confection_category:
       product?.confection_category ?? ('' as '' | 'rideau_voilage' | 'tenture'),
     active: product?.active ?? true,
@@ -181,6 +232,8 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
       max_qty_per_line: f.max_qty_per_line === '' ? null : Number(f.max_qty_per_line) || null,
       largeur_min: f.largeur_min === '' ? null : Number(f.largeur_min) || null,
       largeur_max: f.largeur_max === '' ? null : Number(f.largeur_max) || null,
+      hauteur_min: f.hauteur_min === '' ? null : Number(f.hauteur_min) || null,
+      hauteur_max: f.hauteur_max === '' ? null : Number(f.hauteur_max) || null,
       confection_category: f.unit === 'm' && f.confection_category ? f.confection_category : null,
       photo_urls: photos,
       photo_url: photos[0] ?? '',
@@ -326,6 +379,39 @@ function ProductEditor({ product, onClose }: { product: Product | null; onClose:
               }
             />
             <div className="hint">Surcharge le type et la catégorie (ex. toile de store pour tenture = 2,50 m).</div>
+          </div>
+        </div>
+      )}
+      {f.unit === 'm' && f.confection_category && (
+        <div className="field-row">
+          <div className="field">
+            <label>Hauteur min pour ce produit (m)</label>
+            <input
+              type="number"
+              step="0.01"
+              min={0}
+              placeholder="Aucune"
+              value={f.hauteur_min}
+              onChange={(e) =>
+                setF({ ...f, hauteur_min: e.target.value === '' ? '' : parseFloat(e.target.value) || 0 })
+              }
+            />
+          </div>
+          <div className="field">
+            <label>Hauteur max pour ce produit (m)</label>
+            <input
+              type="number"
+              step="0.01"
+              min={0}
+              placeholder="Aucune"
+              value={f.hauteur_max}
+              onChange={(e) =>
+                setF({ ...f, hauteur_max: e.target.value === '' ? '' : parseFloat(e.target.value) || 0 })
+              }
+            />
+            <div className="hint">
+              Ex. une toile de 2,90 m de haut : impossible de commander une hauteur de 3 m.
+            </div>
           </div>
         </div>
       )}

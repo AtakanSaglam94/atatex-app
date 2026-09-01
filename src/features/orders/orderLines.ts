@@ -193,6 +193,20 @@ export function computeLine(
   const largeurError = validerLargeur(d.largeur ?? 0, limits);
   if (largeurError) return { ...base, largeur: d.largeur, error: largeurError };
 
+  // Hauteur : donnée seule (pas de calcul), mais bornée par le produit si défini.
+  if (d.hauteur != null && d.hauteur > 0) {
+    if (product.hauteur_min != null && d.hauteur < product.hauteur_min) {
+      return { ...base, largeur: d.largeur, error: `Hauteur minimale pour ce produit : ${product.hauteur_min} m.` };
+    }
+    if (product.hauteur_max != null && d.hauteur > product.hauteur_max) {
+      return {
+        ...base,
+        largeur: d.largeur,
+        error: `Hauteur maximale pour ce produit : ${product.hauteur_max} m (le tissu ne permet pas plus).`,
+      };
+    }
+  }
+
   const r = calculerConfection({
     largeur: d.largeur ?? 0,
     prixTissuAuMetre: product.price,

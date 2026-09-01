@@ -432,11 +432,19 @@ function ProductLineRow({
   const selectedType = confectionTypes.find((t) => t.id === draft.confection_type_id) ?? null;
   const catMax = categories.find((c) => c.id === product?.category_id)?.largeur_max ?? null;
   const { min: effMin, max: effMax } = largeurLimits(selectedType, catMax, product);
+  const range = (min: number | null, max: number | null) =>
+    min != null || max != null
+      ? `${min != null ? `min ${min} m` : ''}${min != null && max != null ? ' · ' : ''}${
+          max != null ? `max ${max} m` : ''
+        }`
+      : null;
+  const largeurHint = range(effMin, effMax);
+  const hauteurHint = range(product?.hauteur_min ?? null, product?.hauteur_max ?? null);
   const limitsHint =
-    effMin != null || effMax != null
-      ? `Largeur autorisée : ${effMin != null ? `min ${effMin} m` : ''}${
-          effMin != null && effMax != null ? ' · ' : ''
-        }${effMax != null ? `max ${effMax} m` : ''}`
+    largeurHint || hauteurHint
+      ? [largeurHint && `Largeur : ${largeurHint}`, hauteurHint && `Hauteur : ${hauteurHint}`]
+          .filter(Boolean)
+          .join(' — ')
       : null;
 
   return (
