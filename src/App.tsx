@@ -1,8 +1,11 @@
+import type { ReactNode } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthProvider';
 import { LoginPage } from './auth/LoginPage';
 import { DataProvider, useData } from './data/DataProvider';
+import { OrdersProvider } from './data/useOrders';
 import { Layout } from './components/Layout';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { DashboardPage } from './features/dashboard/DashboardPage';
 import { OrdersPage } from './features/orders/OrdersPage';
 import { StockPage } from './features/stock/StockPage';
@@ -21,7 +24,9 @@ function Shell() {
 
   return (
     <DataProvider>
-      <Gate />
+      <OrdersProvider>
+        <Gate />
+      </OrdersProvider>
     </DataProvider>
   );
 }
@@ -31,23 +36,29 @@ function Gate() {
   const { isAdmin } = useAuth();
   if (loading) return <div className="spinner-page">Chargement des données…</div>;
 
+  const page = (label: string, node: ReactNode) => (
+    <ErrorBoundary label={label} key={label}>
+      {node}
+    </ErrorBoundary>
+  );
+
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<DashboardPage />} />
-        <Route path="/commandes" element={<OrdersPage />} />
-        <Route path="/stock" element={<StockPage />} />
-        <Route path="/clients" element={<ClientsPage />} />
-        <Route path="/catalogue" element={<CatalogPage />} />
-        <Route path="/agenda" element={<AgendaPage />} />
-        <Route path="/factures" element={<InvoicesPage />} />
+        <Route path="/" element={page('Tableau de bord', <DashboardPage />)} />
+        <Route path="/commandes" element={page('Commandes', <OrdersPage />)} />
+        <Route path="/stock" element={page('Stock', <StockPage />)} />
+        <Route path="/clients" element={page('Clients', <ClientsPage />)} />
+        <Route path="/catalogue" element={page('Catalogue', <CatalogPage />)} />
+        <Route path="/agenda" element={page('Agenda', <AgendaPage />)} />
+        <Route path="/factures" element={page('Factures', <InvoicesPage />)} />
         <Route
           path="/comptabilite"
-          element={isAdmin ? <AccountingPage /> : <Navigate to="/" replace />}
+          element={isAdmin ? page('Comptabilité', <AccountingPage />) : <Navigate to="/" replace />}
         />
         <Route
           path="/reglages/*"
-          element={isAdmin ? <SettingsPage /> : <Navigate to="/" replace />}
+          element={isAdmin ? page('Réglages', <SettingsPage />) : <Navigate to="/" replace />}
         />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -57,8 +68,10 @@ function Gate() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Shell />
-    </AuthProvider>
+    <ErrorBoundary label="Application">
+      <AuthProvider>
+        <Shell />
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

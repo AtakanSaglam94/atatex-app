@@ -11,6 +11,7 @@ import { eur, num } from '@/lib/money';
 import { UNIT_LABEL, CONFECTION_CATEGORY_LABEL } from '@/lib/format';
 import { uploadProductPhoto, deleteProductPhoto, MAX_PHOTOS } from '@/lib/photos';
 import { rollConsumption, displayedStock } from '@/lib/rolls';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { RollsSection } from './RollsSection';
 import type { Product, ProductUnit } from '@/types';
 
@@ -160,7 +161,9 @@ export function StockPage() {
       </Panel>
 
       {editing && (
-        <ProductEditor product={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />
+        <ErrorBoundary label="Fiche produit">
+          <ProductEditor product={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />
+        </ErrorBoundary>
       )}
       {deleting && (
         <ConfirmDialog

@@ -1,4 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import type { ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Order, OrderItem, OrderWithRelations, Client } from '@/types';
 
@@ -13,7 +22,21 @@ function normalize(row: Record<string, unknown>): OrderWithRelations {
   };
 }
 
-export function useOrders() {
+interface OrdersState {
+  orders: OrderWithRelations[];
+  loading: boolean;
+  reload: () => Promise<void>;
+}
+
+const Ctx = createContext<OrdersState | null>(null);
+
+/**
+ * Fournit la liste des commandes (avec client + lignes) à toute l'application,
+ * via UN seul abonnement temps réel et UN seul chargement — les composants
+ * appellent `useOrders()` autant de fois que nécessaire sans dupliquer les
+ * requêtes ni entrer en collision sur le canal Realtime.
+ */
+export function OrdersProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<OrderWithRelations[]>([]);
   const [loading, setLoading] = useState(true);
   const debounce = useRef<number>();
@@ -30,23 +53,27 @@ export function useOrders() {
 
   useEffect(() => {
     reload();
+    const bump = () => {
+      window.clearTimeout(debounce.current);
+      debounce.current = window.setTimeout(reload, 250);
+    };
     const channel = supabase
       .channel('atatex-orders')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
-        window.clearTimeout(debounce.current);
-        debounce.current = window.setTimeout(reload, 250);
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' }, () => {
-        window.clearTimeout(debounce.current);
-        debounce.current = window.setTimeout(reload, 250);
-      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, bump)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' }, bump)
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
   }, [reload]);
 
-  return { orders, loading, reload };
+  return createElement(Ctx.Provider, { value: { orders, loading, reload } }, children);
+}
+
+export function useOrders(): OrdersState {
+  const ctx = useContext(Ctx);
+  if (!ctx) throw new Error('useOrders doit être utilisé dans <OrdersProvider>');
+  return ctx;
 }
 
 export async function fetchOrder(id: string): Promise<OrderWithRelations | null> {

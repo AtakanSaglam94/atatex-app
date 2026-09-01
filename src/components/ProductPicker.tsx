@@ -38,9 +38,9 @@ export function ProductPicker({ value, onSelect }: Props) {
     return list
       .filter(
         (p) =>
-          p.name.toLowerCase().includes(s) ||
-          p.sku.toLowerCase().includes(s) ||
-          p.barcode.toLowerCase() === s ||
+          (p.name ?? '').toLowerCase().includes(s) ||
+          (p.sku ?? '').toLowerCase().includes(s) ||
+          (p.barcode ?? '').toLowerCase() === s ||
           (catName.get(p.category_id ?? '') ?? '').toLowerCase().includes(s),
       )
       .slice(0, 40);

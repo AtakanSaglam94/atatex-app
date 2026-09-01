@@ -27,7 +27,7 @@ export function rollsForProduct(
   consumed: Map<string, number>,
 ): { roll: StockRoll; remaining: number }[] {
   return rolls
-    .filter((r) => r.product_id === productId)
+    .filter((r) => r.product_id === productId && r.active)
     .map((r) => ({ roll: r, remaining: rollRemaining(r, consumed) }))
     .sort((a, b) => a.remaining - b.remaining);
 }

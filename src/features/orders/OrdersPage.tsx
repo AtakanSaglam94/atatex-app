@@ -7,6 +7,7 @@ import { eur } from '@/lib/money';
 import { computeOrderTotals } from '@/lib/order-totals';
 import { fmtDate, statusLabel, STATUS_ORDER, STATUS_LABEL } from '@/lib/format';
 import type { OrderStatus, OrderWithRelations } from '@/types';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { OrderEditor } from './OrderEditor';
 import { OrderDetail } from './OrderDetail';
 
@@ -153,28 +154,32 @@ export function OrdersPage() {
       </Panel>
 
       {editing && (
-        <OrderEditor
-          existing={editing === 'new' || editing === 'new-quote' ? null : editing}
-          startAsQuote={editing === 'new-quote'}
-          onClose={() => setEditing(null)}
-          onSaved={async (id) => {
-            setEditing(null);
-            await reload();
-            const o = await fetchOrder(id);
-            if (o) setViewing(o);
-          }}
-        />
+        <ErrorBoundary label="Fenêtre commande">
+          <OrderEditor
+            existing={editing === 'new' || editing === 'new-quote' ? null : editing}
+            startAsQuote={editing === 'new-quote'}
+            onClose={() => setEditing(null)}
+            onSaved={async (id) => {
+              setEditing(null);
+              await reload();
+              const o = await fetchOrder(id);
+              if (o) setViewing(o);
+            }}
+          />
+        </ErrorBoundary>
       )}
 
       {current && !editing && (
-        <OrderDetail
-          order={current}
-          onEdit={() => {
-            setEditing(current);
-          }}
-          onClose={() => setViewing(null)}
-          onChanged={reload}
-        />
+        <ErrorBoundary label="Détail commande">
+          <OrderDetail
+            order={current}
+            onEdit={() => {
+              setEditing(current);
+            }}
+            onClose={() => setViewing(null)}
+            onChanged={reload}
+          />
+        </ErrorBoundary>
       )}
     </>
   );
