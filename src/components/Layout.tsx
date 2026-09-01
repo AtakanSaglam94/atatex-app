@@ -35,7 +35,11 @@ export function Layout({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useTheme();
 
   const nav = isAdmin
-    ? [...NAV, { to: '/reglages', label: 'Réglages', icon: 'settings' as const }]
+    ? [
+        ...NAV,
+        { to: '/comptabilite', label: 'Comptabilité', icon: 'chart' as const },
+        { to: '/reglages', label: 'Réglages', icon: 'settings' as const },
+      ]
     : NAV;
 
   return (

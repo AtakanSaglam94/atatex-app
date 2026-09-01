@@ -36,6 +36,8 @@ const PATHS = {
   users:
     'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13A4 4 0 0 1 16 11',
   moon: 'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z',
+  chart: 'M3 3v18h18M8 15v3M13 10v8M18 6v12',
+  wallet: 'M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-4M3 7h16M16 12h4v4h-4a2 2 0 0 1 0-4z',
 } as const;
 
 export function Icon({ name, size = 18, className }: IconProps) {

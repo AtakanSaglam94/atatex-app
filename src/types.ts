@@ -197,3 +197,29 @@ export interface EmailLogEntry {
   error: string | null;
   created_at: string;
 }
+
+export type ExpensePayment = 'especes' | 'bancontact' | 'virement' | 'carte' | 'autre';
+
+export interface ExpenseCategory {
+  id: string;
+  name: string;
+  position: number;
+  vat_deductible_pct: number;
+  created_at: string;
+}
+
+export interface Expense {
+  id: string;
+  expense_date: string;
+  supplier: string;
+  category_id: string | null;
+  description: string;
+  amount_ttc: number;
+  vat_rate: number;
+  vat_deductible_pct: number;
+  payment_method: ExpensePayment;
+  receipt_url: string;
+  notes: string;
+  created_by: string | null;
+  created_at: string;
+}

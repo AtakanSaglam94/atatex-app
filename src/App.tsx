@@ -9,6 +9,7 @@ import { StockPage } from './features/stock/StockPage';
 import { ClientsPage } from './features/clients/ClientsPage';
 import { CatalogPage } from './features/catalog/CatalogPage';
 import { InvoicesPage } from './features/invoices/InvoicesPage';
+import { AccountingPage } from './features/accounting/AccountingPage';
 import { SettingsPage } from './features/settings/SettingsPage';
 
 function Shell() {
@@ -38,6 +39,10 @@ function Gate() {
         <Route path="/clients" element={<ClientsPage />} />
         <Route path="/catalogue" element={<CatalogPage />} />
         <Route path="/factures" element={<InvoicesPage />} />
+        <Route
+          path="/comptabilite"
+          element={isAdmin ? <AccountingPage /> : <Navigate to="/" replace />}
+        />
         <Route
           path="/reglages/*"
           element={isAdmin ? <SettingsPage /> : <Navigate to="/" replace />}
